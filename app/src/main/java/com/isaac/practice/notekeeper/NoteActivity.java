@@ -3,13 +3,8 @@ package com.isaac.practice.notekeeper;
 import android.content.Intent;
 import android.os.Bundle;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-
-import android.view.View;
 
 import android.view.Menu;
 import android.view.MenuItem;
@@ -26,6 +21,9 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
     public static final int POSITION_NOT_SET = -1;
     private NoteInfo mNote;
     private boolean mIsNewNote;
+    private Spinner mSpinnerCourses;
+    private EditText mTextNoteTitle;
+    private EditText mTextNoteText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,7 +35,7 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
 
         // generated R class with nested class i.e. ID and layout
         // need reference to the spinner
-        Spinner spinnerCourses = (Spinner) findViewById(R.id.spinner_courses);
+        mSpinnerCourses = (Spinner) findViewById(R.id.spinner_courses);
         // 2 layouts required for spinner, one layout for current selection and another layout for each of the other selections.
         // 3 tasks involved -> getting data across and managing each of those layouts.
         // adapter - responsible for moving data over and managing each of those layouts.
@@ -52,17 +50,17 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
         ArrayAdapter<CourseInfo> adapterCourses = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, courses);
         // associate resource we want to use for the drop down list of courses
         adapterCourses.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerCourses.setAdapter(adapterCourses);
+        mSpinnerCourses.setAdapter(adapterCourses);
 
         //method to read values from intents
         readDisplayStateValues();
 
         // Get references to the text views
-        EditText textNoteTitle = (EditText) findViewById(R.id.text_note_title);
-        EditText textNoteText = (EditText) findViewById(R.id.text_note_text);
+        mTextNoteTitle = (EditText) findViewById(R.id.text_note_title);
+        mTextNoteText = (EditText) findViewById(R.id.text_note_text);
 
         if(!mIsNewNote) {
-            displayNote(spinnerCourses, textNoteTitle, textNoteText);
+            displayNote(mSpinnerCourses, mTextNoteTitle, mTextNoteText);
         }
     }
 
@@ -94,7 +92,7 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.menu_note, menu);
         return true;
     }
 
@@ -106,10 +104,28 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_send_mail) {
+            sendEmail();
             return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
+
+    private void sendEmail() {
+        // use implicit intent to send email
+        CourseInfo course = (CourseInfo) mSpinnerCourses.getSelectedItem();
+        String subject = mTextNoteTitle.getText().toString();
+        String text = "Check out what i learnt in the pluralsight course  \"" +
+                course.getTitle() + "\"\n" + mTextNoteText.getText().toString();
+
+        // create intent and associate with action ACTION_SEND
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("message/rfc2822"); // mime type for email messages
+        intent.putExtra(Intent.EXTRA_SUBJECT, subject);
+        intent.putExtra(Intent.EXTRA_TEXT, text);
+        startActivity(intent);
+    }
+
+    // Activities with results
 }
