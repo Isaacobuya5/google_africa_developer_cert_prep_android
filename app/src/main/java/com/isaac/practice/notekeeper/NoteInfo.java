@@ -3,7 +3,7 @@ package com.isaac.practice.notekeeper;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public final class NoteInfo {
+public final class NoteInfo implements Parcelable{
     private CourseInfo mCourse;
     private String mTitle;
     private String mText;
@@ -12,6 +12,13 @@ public final class NoteInfo {
         mCourse = course;
         mTitle = title;
         mText = text;
+    }
+
+    private NoteInfo(Parcel parcel) {
+        // read values back from parcel
+        mCourse = parcel.readParcelable(CourseInfo.class.getClassLoader());
+       mTitle = parcel.readString();
+       mText = parcel.readString();
     }
 
     public CourseInfo getCourse() {
@@ -62,4 +69,34 @@ public final class NoteInfo {
         return getCompareKey();
     }
 
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel parcel, int flags) {
+        // write each member of note info into parcel
+        // courses is a reference type thus must also be Parcelable
+        // parcelable flag describes any special behaviour
+        parcel.writeParcelable(mCourse, 0);
+        parcel.writeString(mTitle);
+        parcel.writeString(mText);
+        // 3. now need to make our class recreatable from a parcel thus field CREATOR
+    }
+
+    public static final Parcelable.Creator CREATOR = new Parcelable.Creator<NoteInfo>(){
+
+        @Override
+        public NoteInfo createFromParcel(Parcel parcel) {
+            // NOTE; Parcel values must be accessed in the same order they were written
+            // common technique used is that rather than setting values directly within parcel, we use a private constructor.
+            return new NoteInfo(parcel);
+        }
+
+        @Override
+        public NoteInfo[] newArray(int size) {
+            return new NoteInfo[size];
+        }
+    };
 }
