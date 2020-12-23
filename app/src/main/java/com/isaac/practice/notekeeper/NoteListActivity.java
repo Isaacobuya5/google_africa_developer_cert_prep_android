@@ -77,9 +77,12 @@ public class NoteListActivity extends AppCompatActivity {
 
                 // get note info corresponding to the note selected
                 // mark the listNote (local variable) final to allow us reference it from inside the anonymous class
-                NoteInfo note = (NoteInfo) listNotes.getItemAtPosition(position);
+//                NoteInfo note = (NoteInfo) listNotes.getItemAtPosition(position);
                 // we use Strings as intent names -> use constants in the destination activity
-                intent.putExtra(NoteActivity.NOTE_INFO, note);
+                // NOTE -> Consider using Parcelable when appropriate e.g. intent that travels across process boundaries coz all activites/components in same app runs within a single process
+
+//                intent.putExtra(NoteActivity.NOTE_INFO, note);
+                intent.putExtra(NoteActivity.NOTE_POSITION, position);
 
                 startActivity(intent);
             }

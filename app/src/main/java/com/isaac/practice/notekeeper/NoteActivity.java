@@ -21,7 +21,9 @@ import java.util.List;
 
 public class NoteActivity extends AppCompatActivity {
 
-    public static final String NOTE_INFO = "com.isaac.practice.notekeeper.NOTE_INFO";
+//    public static final String NOTE_INFO = "com.isaac.practice.notekeeper.NOTE_INFO";
+public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_POSITION";
+    public static final int POSITION_NOT_SET = -1;
     private NoteInfo mNote;
     private boolean mIsNewNote;
 
@@ -78,8 +80,15 @@ public class NoteActivity extends AppCompatActivity {
     private void readDisplayStateValues() {
         Intent intent = getIntent();
         // getting the note that was selected
-        mNote = intent.getParcelableExtra(NOTE_INFO);
-        mIsNewNote = mNote == null;
+//        mNote = intent.getParcelableExtra(NOTE_POSITION);
+        // second value is returned if no item is found
+        int position = intent.getIntExtra(NOTE_POSITION, POSITION_NOT_SET);
+//        mIsNewNote = mNote == null;
+        mIsNewNote = position == POSITION_NOT_SET;
+
+        if(!mIsNewNote) {
+            mNote = DataManager.getInstance().getNotes().get(position);
+        }
     }
 
     @Override
