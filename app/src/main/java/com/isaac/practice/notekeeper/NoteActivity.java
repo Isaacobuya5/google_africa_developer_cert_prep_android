@@ -127,5 +127,36 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
         startActivity(intent);
     }
 
-    // Activities with results
+    // Activities with results -> e.g camera activity, Contact Activity
+    // we start it with startActivityForResult(intent, app_defined_integer);
+    // app_defined_integer - differentiates results within your app
+    // recieve result by calling "onActivityResult(integer_identifier,result code,intent);
+    // integer identifier - App defined integer identifier, Result code -> e.g. RESULT_OK to indicate success, intent -> contains activities result
+    // example -> Camera
+    // start activity -> Intent action -> MediaStore.ACTION_IMAGE_CAPTURE, Extra -> MediaStore.EXTRA_OUTPUT - file in which to save full quality image to - passed as URI
+    /**
+     * public class MyActivity extends MyActivity {
+     * // integer identifier to identify the kind of results
+     * private static final int SHOW_CAMERA = 1;
+     *
+     * private void showCamera(Uri photoFile) {
+     *     Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+     *     intent.putExtra(MediaStore.EXTRA_OUTPUT, photoFile);
+     *      startActivity(intent, SHOW_CAMERA);
+     * }
+     *
+     * // GETTING RESULTS BACK
+     * Check for request code of SHOW_CAMERA - identifies the result is for our request.
+     * Check for result code of RESULT_OK -> indicates success -> full quality image stored in file
+     * Retrieve thumbnail -> stored in result intent as thumbnail.
+     *
+     * @override
+     * protected void onActivityResult(int requestCode, int resultCode, Intent result) {
+     *     if(requestCode == SHOW_CAMERA && resultCode == RESULT_OK) {
+     *         Bitmap thumbnail = result.getParcelable("data");
+     *         // do something with the thumbnail e.g. read file
+     *     }
+     * }
+     */
+    //
 }
