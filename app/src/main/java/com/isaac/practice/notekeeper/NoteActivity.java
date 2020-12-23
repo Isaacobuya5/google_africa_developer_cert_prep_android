@@ -24,6 +24,8 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
     private Spinner mSpinnerCourses;
     private EditText mTextNoteTitle;
     private EditText mTextNoteText;
+    private int mNotePosition;
+    private boolean mIsCancelling;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,9 +86,19 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
 //        mIsNewNote = mNote == null;
         mIsNewNote = position == POSITION_NOT_SET;
 
-        if(!mIsNewNote) {
+        if(mIsNewNote) {
+            // create a backing store incase a new note
+            createNewNote();
+        } else {
             mNote = DataManager.getInstance().getNotes().get(position);
         }
+    }
+
+    private void createNewNote() {
+        DataManager dm = DataManager.getInstance();
+        mNotePosition = dm.createNewNote();
+        // get note at that position and assign to mNote
+        mNote = dm.getNotes().get(mNotePosition);
     }
 
     @Override
@@ -107,6 +119,9 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
         if (id == R.id.action_send_mail) {
             sendEmail();
             return true;
+        } else if(id == R.id.action_cancel) {
+            mIsCancelling = true;
+            finish();
         }
 
         return super.onOptionsItemSelected(item);
@@ -158,5 +173,35 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
      *     }
      * }
      */
-    //
+
+
+    // Tasks - collection of activities that users interacts with when performing a certain job.
+    // flow through an app is managed as a task.
+    // Task is managed as a stack -> i.e. back stack
+    // back button -> removes activity from a task
+    // selecting activity adds it to a task.
+    // we need to think how ro manage state within the flow
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // if we are cancelling
+        if(mIsCancelling) {
+            // remove note from our backing store - if only we have created it new
+            if(mIsNewNote)
+                DataManager.getInstance().removeNote(mNotePosition);
+        } else {
+            // save note when user leaves the note
+            saveNote();
+        }
+    }
+
+    private void saveNote() {
+        mNote.setCourse((CourseInfo) mSpinnerCourses.getSelectedItem());
+        mNote.setTitle(mTextNoteTitle.getText().toString());
+        mNote.setText(mTextNoteText.getText().toString());
+    }
+    // hint -> write to backing store when leaving an activity.
+    // saving changes -> handle in onPause
+    // new entries -> handle in onCreate
 }
