@@ -19,6 +19,8 @@ import java.util.List;
 
 public class NoteListActivity extends AppCompatActivity {
 
+    private ArrayAdapter<NoteInfo> mAdapterNotes;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,13 +40,20 @@ public class NoteListActivity extends AppCompatActivity {
         initializeDisplayContent();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // need a way to tell adapter that list has changed due to new note creation
+        mAdapterNotes.notifyDataSetChanged();
+    }
+
     private void initializeDisplayContent() {
         final ListView listNotes = (ListView) findViewById(R.id.list_notes);
         // get content to place in the list
         List<NoteInfo> notes = DataManager.getInstance().getNotes();
         // adapter
-        ArrayAdapter<NoteInfo> adapterNotes = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, notes);
-        listNotes.setAdapter(adapterNotes);
+        mAdapterNotes = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, notes);
+        listNotes.setAdapter(mAdapterNotes);
 
         // handle user selection - i.e. click on a single item within a list
         // accepts an interface that is to be implemented by this Activity or create another class, inner class  or implement as anonymous class as shown below

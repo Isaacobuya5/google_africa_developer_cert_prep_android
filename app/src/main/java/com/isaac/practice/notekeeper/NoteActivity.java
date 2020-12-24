@@ -3,8 +3,11 @@ package com.isaac.practice.notekeeper;
 import android.content.Intent;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.lifecycle.ViewModel;
+import androidx.lifecycle.ViewModelProvider;
 
 import android.view.Menu;
 import android.view.MenuItem;
@@ -26,6 +29,10 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
     private EditText mTextNoteText;
     private int mNotePosition;
     private boolean mIsCancelling;
+//    private String mMOriginalCourseId;
+//    private String mMOriginalNoteTitle;
+//    private String mMOriginalNoteText;
+    private NoteActivityViewModel mNoteActivityViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +41,20 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
         setContentView(R.layout.activity_note);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        // ViewModelProvider to manage instances of our view model across configuration change
+        ViewModelProvider viewModelProvider = new ViewModelProvider(getViewModelStore(), ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication()));
+        mNoteActivityViewModel = viewModelProvider.get(NoteActivityViewModel.class);
+
+        // restore state from the bundle if the viewModel instance had been destroyed alongside activity
+        // if viewmodel instance is still present, no need to restore from savedInstance state
+        if (mNoteActivityViewModel.mIsNewlyCreated && savedInstanceState != null) {
+            // go ahead and restore the state
+            mNoteActivityViewModel.restoreState(savedInstanceState);
+        }
+
+        // ViewModel instance now exists
+        mNoteActivityViewModel.mIsNewlyCreated = false;
 
         // generated R class with nested class i.e. ID and layout
         // need reference to the spinner
@@ -56,6 +77,8 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
 
         //method to read values from intents
         readDisplayStateValues();
+        // save original note values just incase we cancel update to an existing note
+        saveOriginalNoteValues();
 
         // Get references to the text views
         mTextNoteTitle = (EditText) findViewById(R.id.text_note_title);
@@ -64,6 +87,18 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
         if(!mIsNewNote) {
             displayNote(mSpinnerCourses, mTextNoteTitle, mTextNoteText);
         }
+    }
+
+    private void saveOriginalNoteValues() {
+        if (mIsNewNote)
+            return;
+//        mMOriginalCourseId = mNote.getCourse().getCourseId();
+//        mMOriginalNoteTitle = mNote.getTitle();
+//        mMOriginalNoteText = mNote.getText();
+        mNoteActivityViewModel.setOriginalCourseId(mNote.getCourse().getCourseId());
+        mNoteActivityViewModel.setOriginalNoteTitle(mNote.getTitle());
+        mNoteActivityViewModel.setOriginalNoteText(mNote.getText());
+
     }
 
     private void displayNote(Spinner spinnerCourses, EditText textNoteTitle, EditText textNoteText) {
@@ -188,12 +223,23 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
         // if we are cancelling
         if(mIsCancelling) {
             // remove note from our backing store - if only we have created it new
-            if(mIsNewNote)
+            if(mIsNewNote) {
                 DataManager.getInstance().removeNote(mNotePosition);
+            } else {
+                // if cancelled existing note then store the orignial values
+                storePreviousNoteValues();
+            }
         } else {
             // save note when user leaves the note
             saveNote();
         }
+    }
+
+    private void storePreviousNoteValues() {
+        CourseInfo course = DataManager.getInstance().getCourse(mNoteActivityViewModel.getOriginalCourseId());
+        mNote.setCourse(course);
+        mNote.setTitle(mNoteActivityViewModel.getOriginalNoteTitle());
+        mNote.setText(mNoteActivityViewModel.getOriginalNoteText());
     }
 
     private void saveNote() {
@@ -204,4 +250,16 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
     // hint -> write to backing store when leaving an activity.
     // saving changes -> handle in onPause
     // new entries -> handle in onCreate
+
+    // onSavedInstance saves  state upon activty destruction and recreation
+    // use together with ViewModel for a complete state management solution
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        // save the instance state to a bundle
+        if (outState != null) {
+            mNoteActivityViewModel.saveState(outState);
+        }
+    }
 }
