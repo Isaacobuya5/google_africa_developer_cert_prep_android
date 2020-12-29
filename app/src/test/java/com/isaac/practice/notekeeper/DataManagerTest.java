@@ -29,6 +29,33 @@ public class DataManagerTest {
         assertEquals(compareNote.getText(), newNote.getText());
     }
 
+    @Test
+    public void findSimilarNotes() {
+        DataManager dm = DataManager.getInstance();
+        final CourseInfo course = dm.getCourse("android_async");
+        final String noteTitle = "Test note title";
+        final String noteText1 = "This is the body text of my test note";
+        final String noteText2  = "This is the body of my second test note";
+
+        int noteIndex1 = dm.createNewNote();
+        NoteInfo newNote1 = dm.getNotes().get(noteIndex1);
+        newNote1.setCourse(course);
+        newNote1.setTitle(noteTitle);
+        newNote1.setText(noteText1);
+
+        int noteIndex2 = dm.createNewNote();
+        NoteInfo newNote2 = dm.getNotes().get(noteIndex2);
+        newNote2.setCourse(course);
+        newNote2.setTitle(noteTitle);
+        newNote2.setText(noteText2);
+
+        int foundIndex1 = dm.findNote(newNote1);
+        assertEquals(noteIndex1, foundIndex1);
+
+        int foundIndex2 = dm.findNote(newNote2);
+        assertEquals(noteIndex2, foundIndex2);
+    }
+
     /**
      * Testing needs to be a core task because it is essential to delivering a quality software.
      * In android we focus mainly on functional testing which invloves verifying that a piece of
@@ -74,6 +101,19 @@ public class DataManagerTest {
      *  - Assertion failure
      *  Use "Debug Test" option
      *
+     * Assuring Test Consistency
+     * -> Tests must be reliably i.e.
+     *  - should not depend on another test
+     *  - should not be impacted by side effects of other tests.
+     *  Therefore to assure consistency, tests should normally start from the same state since test order is not guranteed.
+     *  We therefore need ways to set/reset the state of the test.
+     *  Possible solutions;
+     *  a. Test Pre-processing
+     * @Before annotation - runs before each test in a class.
+     * @BeforeClass annotation - runs once before all tests in that class. Method must be static.
+     * b. Test Post-processing
+     * @After - runs after each test in a class
+     * @AfterClass - runs once after all tests in a class. Method must be static.
      *
      */
 }
