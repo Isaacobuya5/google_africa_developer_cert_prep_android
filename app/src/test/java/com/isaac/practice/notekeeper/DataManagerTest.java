@@ -73,6 +73,20 @@ public class DataManagerTest {
         assertEquals(noteIndex2, foundIndex2);
     }
 
+    @Test
+    public void createNewNoteOneStep() {
+        final CourseInfo course = sDataManager.getCourse("android_async");
+        final String noteTitle = "Test note title";
+        final String noteText = "This is the body text of my test note";
+
+        int noteIndex = sDataManager.createNewNote(course, noteTitle, noteText);
+        // get back note at that index
+        NoteInfo newNote = sDataManager.getNotes().get(noteIndex);
+        assertEquals(course, newNote.getCourse());
+        assertEquals(noteTitle, newNote.getTitle());
+        assertEquals(noteText, newNote.getText());
+    }
+
     /**
      * Testing needs to be a core task because it is essential to delivering a quality software.
      * In android we focus mainly on functional testing which invloves verifying that a piece of
@@ -132,6 +146,8 @@ public class DataManagerTest {
      * @After - runs after each test in a class
      * @AfterClass - runs once after all tests in a class. Method must be static.
      *
+     * Test Driven Development
+     * -> Involves writing test before implementation
      *
      */
 }
