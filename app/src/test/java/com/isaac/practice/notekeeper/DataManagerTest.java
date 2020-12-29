@@ -1,28 +1,46 @@
 package com.isaac.practice.notekeeper;
 
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
 public class DataManagerTest {
 
+    static DataManager sDataManager;
+
+    // intialize data manager
+    @BeforeClass
+    public static void classSetUp() {
+        sDataManager = DataManager.getInstance();
+    }
+
+    // ensure that each test starts with a consistent state
+    @Before
+    public void setUp() {
+        // clear the list of notes
+        sDataManager.getNotes().clear();
+        // start with the sample notes
+        sDataManager.initializeExampleNotes();
+    }
+
     @Test
     public void createNewNote() {
         // To create a new note we need course, noteTitle and noteText.
-        DataManager dm = DataManager.getInstance();
-        final CourseInfo course = dm.getCourse("android_async");
+        final CourseInfo course = sDataManager.getCourse("android_async");
         final String noteTitle = "Test note title";
         final String noteText = "This is my test body";
         // create a new note and get the index
-        int noteIndex = dm.createNewNote();
+        int noteIndex = sDataManager.createNewNote();
         // get note at that particular position
-        NoteInfo newNote = dm.getNotes().get(noteIndex);
+        NoteInfo newNote = sDataManager.getNotes().get(noteIndex);
         newNote.setCourse(course);
         newNote.setTitle(noteTitle);
         newNote.setText(noteText);
         // now we have a note fully set,, time to assert
         // get a note from that index
-        NoteInfo compareNote = dm.getNotes().get(noteIndex);
+        NoteInfo compareNote = sDataManager.getNotes().get(noteIndex);
         // assert
         assertEquals(compareNote.getCourse(), newNote.getCourse());
         assertEquals(compareNote.getTitle(), newNote.getTitle());
@@ -31,28 +49,27 @@ public class DataManagerTest {
 
     @Test
     public void findSimilarNotes() {
-        DataManager dm = DataManager.getInstance();
-        final CourseInfo course = dm.getCourse("android_async");
+        final CourseInfo course = sDataManager.getCourse("android_async");
         final String noteTitle = "Test note title";
         final String noteText1 = "This is the body text of my test note";
         final String noteText2  = "This is the body of my second test note";
 
-        int noteIndex1 = dm.createNewNote();
-        NoteInfo newNote1 = dm.getNotes().get(noteIndex1);
+        int noteIndex1 = sDataManager.createNewNote();
+        NoteInfo newNote1 = sDataManager.getNotes().get(noteIndex1);
         newNote1.setCourse(course);
         newNote1.setTitle(noteTitle);
         newNote1.setText(noteText1);
 
-        int noteIndex2 = dm.createNewNote();
-        NoteInfo newNote2 = dm.getNotes().get(noteIndex2);
+        int noteIndex2 = sDataManager.createNewNote();
+        NoteInfo newNote2 = sDataManager.getNotes().get(noteIndex2);
         newNote2.setCourse(course);
         newNote2.setTitle(noteTitle);
         newNote2.setText(noteText2);
 
-        int foundIndex1 = dm.findNote(newNote1);
+        int foundIndex1 = sDataManager.findNote(newNote1);
         assertEquals(noteIndex1, foundIndex1);
 
-        int foundIndex2 = dm.findNote(newNote2);
+        int foundIndex2 = sDataManager.findNote(newNote2);
         assertEquals(noteIndex2, foundIndex2);
     }
 
@@ -114,6 +131,7 @@ public class DataManagerTest {
      * b. Test Post-processing
      * @After - runs after each test in a class
      * @AfterClass - runs once after all tests in a class. Method must be static.
+     *
      *
      */
 }
