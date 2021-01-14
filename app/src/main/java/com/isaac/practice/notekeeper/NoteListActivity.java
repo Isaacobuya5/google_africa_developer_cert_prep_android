@@ -102,6 +102,25 @@ public class NoteListActivity extends AppCompatActivity {
      * Adjacent items are consistently sized.
      * StaggeredGridLayoutManager - items are organized as a grid but each item is consistently sized.
      *
+     *  BINDING DATA TO RECYCLERVIEW
+     *
+     *  a. Item View Holder - views are managed using view holder patterns which;
+     *  -> Holds a reference to the top level view.
+     *  -> Holds a refernce to the contained views.
+     *  We do that by implementing a Custom ViewHolder class which extends RecyclerView
+     *  -> Have fields inside it for all of the contained views that will be used to display information to the views.
+     *  Steps of Implementing RecyclerView adapter
+     *  Extend the RecyclerView.Adapter
+     *  -> We pass View Holder class as a type parameter i.e. the custom view holder class..
+     *  -> Most often, ViewHolder class are often nested within the adapter class..
+     *
+     *  RecyclerView.Adapter has a number of methods that we can override to provide custom behaviour.
+     *  The three most common methods are;
+     *  getItemCount() - return a number of items.
+     *  onCreateViewHolder() - creates our item views and stores item view references in the view holder.
+     *  (stores information of that item view in the custom view holder class.)
+     *  onBindViewHolder() - receives ViewHolder from the recycler view and the position of the data we want to display.
+     *  Set data values (display values) using ViewHolder.
      *
      */
 }
