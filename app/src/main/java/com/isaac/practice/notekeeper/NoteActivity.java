@@ -157,9 +157,41 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
         } else if(id == R.id.action_cancel) {
             mIsCancelling = true;
             finish();
+        } else if(id == R.id.action_next){
+            displayNextNote();
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        // getting reference to the menu item "next"
+        MenuItem item = menu.findItem(R.id.action_next);
+        // get the last note index
+        int lastNoteIndex = DataManager.getInstance().getNotes().size() - 1;
+        // enable/ disable next button
+        item.setEnabled(mNotePosition < lastNoteIndex); // always enabled prior to last note
+        // problem - gets called when the note is initially displayed thus the need for inValidateOptionsMenu
+        // which ensures that this method gets called again when we move to the next note
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    private void displayNextNote() {
+        // ensure to save the note before "next"
+        saveNote();
+        // increment the current note position
+        ++mNotePosition;
+        // get the corresponding note at that positon
+        mNote = DataManager.getInstance().getNotes().get(mNotePosition);
+        // display that note
+        displayNote(mSpinnerCourses, mTextNoteTitle, mTextNoteText);
+
+        // calls onPrepareOptionsMenu again
+        invalidateOptionsMenu();
+
+        saveOriginalNoteValues();
+
     }
 
     private void sendEmail() {
@@ -262,4 +294,59 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
             mNoteActivityViewModel.saveState(outState);
         }
     }
+
+    /**
+     * WORKING WITH OPTIONS MENU
+     * Options Menu - allow us to provide actions for out app.
+     * By default, options normally appear under the action overflow.
+     * When we want to create an options menu, we define them in the menu resource.
+     * The root component of that file is <menu></menu>
+     * Each action is then defined as a menu item within that <menu></menu>
+     * Two key properties of menu item are id and title.
+     *
+     * ASSOCIATING OPTIONS MENU WITH AN ACTIVITY.
+     * There is no automatic association between options menu and an activity.
+     * To create an association, we override the onCreateOptionsMenu()  method.
+     * It receives a menu reference and then we are responsible for attaching our menu items to the menu that is passed in.
+     * We do that by inflating menu resource with the menu inflater.
+     * The Activity class provides method getMenuInflater() which gives us access to the menu inflater.
+     * Then we simply inflate our menu using that returned menu inflater.
+     *
+     * HANDLING MENU ITEM SELECTION.
+     * @Override onOptionsItemSelected call back method.
+     * Receives the menu item reference.
+     * Retrieve menu item id value - Access using MenuItem.getItemId() and the perform whatever work that we want to do.
+     *
+     *
+     * MENU ITEMS AS APP BAR ACTIONS
+     * Limitations of Action Overflow menus are;
+     * - Not immediately disoverable.
+     * - Access takes multiple steps.
+     * Advantages of App Bar Actions are;
+     * a. Menu items are visible on the app bar.
+     * b. Improve access to the common menu items.
+     * c. Normally have icons associated with them.
+     *
+     * Making menu item as app bar actions;
+     *  Use showAsAction property with common values such as;
+     * a. ifRoom -> menu item appear as app bar actions when space allows.
+     * - menu items are given prefernce in top to bottom order.
+     * b. always - always displays menu items as app bar actions.
+     * use vary SPARINGLY infact it is recommended that no more than two menu items should be displayed as "always".
+     * c. withText - show text with action when space allows.
+     * - can be combined with ifRoom or always values.
+     *
+     * CHANGING MENU ITEMS AT RUN TIME
+     * Application state can change menu state i.e.
+     * 1. may need to add/remove menu items.
+     * 2. may need to enable/disable menu items.
+     * 2 KEY METHODS
+     * a. System calls
+     * onPrepareOptionsMenu receives reference to the current menu and is
+     * usually called after onCreateOptionsMenu and before menu is displayed.
+     * b. Application calls.
+     * invalidateOptionsMenu() - call when menu state may need to change.
+     * - System schedules a call to onPrepareOptionsMenu - thus it gets called and gives us another chance to
+     * modify the state of our application.
+     */
 }
