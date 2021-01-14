@@ -5,6 +5,7 @@ import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+import com.isaac.practice.notekeeper.adapters.NotesRecyclerAdapter;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -22,6 +23,7 @@ import java.util.List;
 public class NoteListActivity extends AppCompatActivity {
 
     private ArrayAdapter<NoteInfo> mAdapterNotes;
+    private NotesRecyclerAdapter mNotesRecyclerAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,7 +48,7 @@ public class NoteListActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         // need a way to tell adapter that list has changed due to new note creation
-
+        mNotesRecyclerAdapter.notifyDataSetChanged();
     }
 
     private void initializeDisplayContent() {
@@ -56,11 +58,12 @@ public class NoteListActivity extends AppCompatActivity {
         final LinearLayoutManager notesLayoutManager = new LinearLayoutManager(this);
         // associate layout manager with the recyclerview
         recyclerNotes.setLayoutManager(notesLayoutManager);
-
         // get content to place in the list
         List<NoteInfo> notes = DataManager.getInstance().getNotes();
-
-
+        // our adapter
+        mNotesRecyclerAdapter = new NotesRecyclerAdapter(notes, this);
+        // associate adapter with recycler view
+        recyclerNotes.setAdapter(mNotesRecyclerAdapter);
     }
 
     /**
@@ -121,6 +124,12 @@ public class NoteListActivity extends AppCompatActivity {
      *  (stores information of that item view in the custom view holder class.)
      *  onBindViewHolder() - receives ViewHolder from the recycler view and the position of the data we want to display.
      *  Set data values (display values) using ViewHolder.
+     *
+     * ITEM SELECTION HANDLING
+     * RecyclerView has no implicit support for item selection.
+     * Instead, it allows contained views to each add their own click even handlers.
+     * Allows multiple selection within an item.
+     * In this case we Associate onClick listener with top level view, however some cases may need it on contained views
      *
      */
 }

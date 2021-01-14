@@ -1,6 +1,7 @@
 package com.isaac.practice.notekeeper.adapters;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,6 +10,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.isaac.practice.notekeeper.NoteActivity;
 import com.isaac.practice.notekeeper.NoteInfo;
 import com.isaac.practice.notekeeper.R;
 
@@ -44,6 +46,8 @@ public class NotesRecyclerAdapter extends RecyclerView.Adapter<NotesRecyclerAdap
         // displaying data values
         holder.mTextCourse.setText(note.getCourse().getTitle());
         holder.mTextTitle.setText(note.getTitle());
+        // set position of this view holder for purposes of click
+        holder.mCurrentPosition = position;
     }
 
     @Override
@@ -55,11 +59,23 @@ public class NotesRecyclerAdapter extends RecyclerView.Adapter<NotesRecyclerAdap
     public class ViewHolder extends RecyclerView.ViewHolder {
         private TextView mTextCourse;
         private TextView mTextTitle;
+        // we need to know the position of the ViewHolder
+        public int mCurrentPosition;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             mTextCourse = (TextView) itemView.findViewById(R.id.text_course);
             mTextTitle = (TextView) itemView.findViewById(R.id.text_title);
+            // associate click listener with this view
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(mContext, NoteActivity.class);
+                    // set intent extra
+                    intent.putExtra(NoteActivity.NOTE_POSITION, mCurrentPosition);
+                    mContext.startActivity(intent);
+                }
+            });
         }
     }
 }
