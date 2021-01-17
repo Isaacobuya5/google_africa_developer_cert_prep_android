@@ -46,15 +46,25 @@ public class NextThroughNotesTest {
         List<NoteInfo> notes = DataManager.getInstance().getNotes();
 
         // the index of the first note
-        int index = 0;
-        // get note at that index
-        NoteInfo note = notes.get(index);
-        // check if the correct note has been display
-        // spinner
-        onView(withId(R.id.spinner_courses)).check(matches(withSpinnerText(note.getCourse().getTitle())));
-        // note title
-        onView(withId(R.id.text_note_title)).check(matches(withText(note.getTitle())));
-        // note text
-        onView(withId(R.id.text_note_text)).check(matches(withText(note.getText())));
+        for (int index = 0; index < notes.size(); index++) {
+            // get note at that index
+            NoteInfo note = notes.get(index);
+            // check if the correct note has been display
+            // spinner
+            onView(withId(R.id.spinner_courses)).check(matches(withSpinnerText(note.getCourse().getTitle())));
+            // note title
+            onView(withId(R.id.text_note_title)).check(matches(withText(note.getTitle())));
+            // note text
+            onView(withId(R.id.text_note_text)).check(matches(withText(note.getText())));
+
+            // click next on menu
+            // only if we are note on the last note
+            if (index < notes.size() - 1)
+                onView(allOf(withId(R.id.action_next), isEnabled())).perform(click());
+
+        }
+        // check if the button is now disabled
+        onView(withId(R.id.action_next)).check(matches(not(isEnabled())));
+        pressBack(); // back button
     }
 }
