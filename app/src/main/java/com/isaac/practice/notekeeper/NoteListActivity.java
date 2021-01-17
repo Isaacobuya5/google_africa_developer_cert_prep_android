@@ -132,4 +132,5 @@ public class NoteListActivity extends AppCompatActivity {
      * In this case we Associate onClick listener with top level view, however some cases may need it on contained views
      *
      */
+
 }

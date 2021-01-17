@@ -145,4 +145,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         View view = findViewById(R.id.list_items);
         Snackbar.make(view, message, Snackbar.LENGTH_LONG).show();
     }
+
+    /**
+     * TESTING MENU, NAVIGATION DRAWER AND RECYCLERVIEW
+     * Is much like testing other views i.e;
+     * -> Still relies on the ViewInteraction class.
+     * -> We find view by matchers and execute actions on the ViewInteraction object returned.
+     * -> However, the differences comes with the Action classes used more so for navigation drawer and recyclerview.
+     *
+     * NAVIGATION DRAWER TESTS
+     * we use DrawerActions class - to interact with our drawer such as open/close drawer.
+     * We use NavigationViewActions class - to interact with our NavigationView i.e. select an option.
+     *
+     * RECYCLERVIEW TESTS
+     * We use RecyclerViewActions class to interact with the RecyclerView such as scrolling or Perform actions
+     * on RecyclerView items.
+     */
 }
