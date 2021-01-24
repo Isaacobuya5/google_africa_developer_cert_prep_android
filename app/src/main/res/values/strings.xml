@@ -44,4 +44,11 @@
     </string>
     <string name="attachment_summary_off">Only download attachments when manually requested</string>
     <string name="settings_menu">settings</string>
+    <string name="display_name_title">Display Name</string>
+    <string name="pref_title_email_address">Email Address</string>
+    <string name="pref_default_display_name">Isaac Obuya</string>
+    <string name="pref_default_email_address">me@yourhost.mail.com</string>
+    <string name="pref_default_favorite_social">http://plus.google.com</string>
+    <string name="pref_title_favorite_social">Favorite Social Media</string>
+    <string name="general_settings_title">General Settings</string>
 </resources>

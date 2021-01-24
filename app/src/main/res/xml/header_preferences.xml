@@ -1,10 +1,10 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <Preference
-        app:fragment="com.isaac.practice.notekeeper.SettingsActivity$MessagesFragment"
-        app:icon="@drawable/messages"
+        app:fragment="com.isaac.practice.notekeeper.SettingsActivity$GeneralPreferenceFragment"
+        app:icon="@drawable/ic_baseline_settings_24"
         app:key="messages_header"
-        app:title="@string/messages_header" />
+        app:title="@string/general_settings_title" />
 
     <Preference
         app:fragment="com.isaac.practice.notekeeper.SettingsActivity$SyncFragment"
