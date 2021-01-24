@@ -17,6 +17,10 @@
     <style name="Theme.NoteKeeper.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
+        <item name="colorPrimary">@color/color_primary</item>
+        <item name="colorPrimaryDark">@color/color_primary_dark</item>
+        <item name="colorAccent">@color/color_ascent</item>
+        <item name="android:statusBarColor">@color/color_primary_dark</item>
     </style>
 
     <style name="Theme.NoteKeeper.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />

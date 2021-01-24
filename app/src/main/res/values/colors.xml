@@ -8,4 +8,7 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="pluralsight_orange">#f05a28</color>
+    <color name="color_primary">#333333</color>
+    <color name="color_primary_dark">#222222</color>
+    <color name="color_ascent">@color/pluralsight_orange</color>
 </resources>

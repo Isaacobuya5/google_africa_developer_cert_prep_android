@@ -1,8 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- style for the course title -->
     <style name="courseTitle" parent="@style/TextAppearance.MaterialComponents.Headline4">
         <item name="android:textColor">@color/pluralsight_orange</item>
         <item name="android:textSize">16sp</item>
         <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- style for the floating action bar -->
+    <!-- attributes coming from android framework have the "android" prefix
+    while those coming from support library do not have
+    examples support library - Widget.Design.FloatingActionButton, srcCompat
+    example framework - android:textSize, @drawable/ic_baseline_add_circle_24
+    -->
+    <style name="addFad" parent="Widget.Design.FloatingActionButton">
+        <item name="srcCompat">@drawable/ic_baseline_add_circle_24</item>
+        <item name="android:tint">@android:color/white</item>
     </style>
 </resources>
