@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mNotesLayoutManager = new LinearLayoutManager(this);
 
         // LayoutManager for courses
-        mGridLayoutManager = new GridLayoutManager(this, 2);
+        mGridLayoutManager = new GridLayoutManager(this, getResources().getInteger(R.integer.course_grid_span));
 
         // get content to place in the list
         List<NoteInfo> notes = DataManager.getInstance().getNotes();
@@ -109,9 +109,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         } else if(id == R.id.nav_courses) {
             displayCourses();
         } else if(id == R.id.nav_send) {
-            handleSelection("Don't you think you've shared enough");
+            handleSelection(R.string.nav_share_message);
         } else if(id == R.id.nav_send) {
-            handleSelection("You can send here");
+            handleSelection(R.string.nav_send_message);
         }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
@@ -141,9 +141,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         menu.findItem(menu_id).setChecked(true);
     }
 
-    private void handleSelection(String message) {
+    private void handleSelection(int messageId) {
         View view = findViewById(R.id.list_items);
-        Snackbar.make(view, message, Snackbar.LENGTH_LONG).show();
+        Snackbar.make(view, messageId, Snackbar.LENGTH_LONG).show();
     }
 
     /**

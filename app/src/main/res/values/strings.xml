@@ -23,4 +23,8 @@
     <string name="menu_slideshow">Slideshow</string>
     <string name="notes_menu">Notes</string>
     <string name="courses_menu">Courses</string>
+    <string name="note_text">Note Text</string>
+    <string name="note_title">Note title</string>
+    <string name="nav_share_message">Don\'t you think you\'ve shared enough</string>
+    <string name="nav_send_message">You can send here</string>
 </resources>
