@@ -2,6 +2,7 @@ package com.isaac.practice.notekeeper;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
@@ -13,6 +14,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.navigation.NavigationView;
 import com.isaac.practice.notekeeper.adapters.CoursesRecyclerAdapter;
 import com.isaac.practice.notekeeper.adapters.NotesRecyclerAdapter;
+import com.isaac.practice.notekeeper.database.NoteKeeperOpenHelper;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
@@ -34,6 +36,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private LinearLayoutManager mNotesLayoutManager;
     private GridLayoutManager mGridLayoutManager;
     private CoursesRecyclerAdapter mCoursesRecyclerAdapter;
+    private NoteKeeperOpenHelper mNoteKeeperOpenHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +44,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        mNoteKeeperOpenHelper = new NoteKeeperOpenHelper(this);
+
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -185,6 +191,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         NavigationView navigationView = findViewById(R.id.nav_view);
         // getting menus within navigation view
         Menu menu = navigationView.getMenu();
+
+        // expensive operation
+        SQLiteDatabase db = mNoteKeeperOpenHelper.getReadableDatabase();
+
         // set the menu to checked
         menu.findItem(menu_id).setChecked(true);
     }
@@ -192,6 +202,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private void handleSelection(int messageId) {
         View view = findViewById(R.id.list_items);
         Snackbar.make(view, messageId, Snackbar.LENGTH_LONG).show();
+    }
+
+    @Override
+    protected void onDestroy() {
+        mNoteKeeperOpenHelper.close();
+        super.onDestroy();
     }
 
     /**

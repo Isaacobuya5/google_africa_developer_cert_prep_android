@@ -8,7 +8,7 @@ public final class NoteKeeperDatabaseContract {
     private NoteKeeperDatabaseContract() {};
 
     // CourseInfo table
-    private static final class CourseInfoEntry implements BaseColumns {
+    public static final class CourseInfoEntry implements BaseColumns {
         public static final String TABLE_NAME = "course_info";
         public static final String COLUMN_COURSE_ID = "course_id";
         public static final String COLUMN_COURSE_TITLE = "course_title";
@@ -22,7 +22,7 @@ public final class NoteKeeperDatabaseContract {
     }
 
     // NoteInfo table
-    private static final class NoteInfoEntry implements BaseColumns{
+    public static final class NoteInfoEntry implements BaseColumns{
         public static final String TABLE_NAME = "note_info";
         public static final String COLUMN_NOTE_TITLE = "note_title";
         public static final String COLUMN_NOTE_TEXT = "note_text";
