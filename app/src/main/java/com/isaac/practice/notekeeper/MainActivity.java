@@ -73,6 +73,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void initializeDisplayContent() {
+
+        // load notes and courses from the database
+        DataManager.loadFromDatabase(mNoteKeeperOpenHelper);
+
         // getting a reference to recyclerview
         mRecyclerItems = (RecyclerView) findViewById(R.id.list_items);
         // LayoutManager
