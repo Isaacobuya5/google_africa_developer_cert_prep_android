@@ -44,6 +44,7 @@ public class DataManager {
 
         // issue query to read notes
         final String[] noteColumns = {
+                NoteInfoEntry._ID,
                 NoteInfoEntry.COLUMN_NOTE_TITLE,
                 NoteInfoEntry.COLUMN_NOTE_TEXT,
                 NoteInfoEntry.COLUMN_COURSE_ID
@@ -57,6 +58,7 @@ public class DataManager {
 
     private static void loadNotesFromDatabase(Cursor cursor) {
         // get column positions
+        int idPos = cursor.getColumnIndex(NoteInfoEntry._ID);
         int noteTitlePos = cursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TITLE);
         int noteTextPos = cursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TEXT);
         int courseIdPos = cursor.getColumnIndex(NoteInfoEntry.COLUMN_COURSE_ID);
@@ -66,13 +68,14 @@ public class DataManager {
         dm.mNotes.clear();
 
         while(cursor.moveToNext()) {
+            int id = cursor.getInt(idPos);
             String noteTitle = cursor.getString(noteTitlePos);
             String noteText = cursor.getString(noteTextPos);
             String courseId = cursor.getString(courseIdPos);
 
             // get the particular course
             CourseInfo noteCourse = dm.getCourse(courseId);
-            NoteInfo note = new NoteInfo(noteCourse, noteTitle, noteText);
+            NoteInfo note = new NoteInfo(noteCourse, noteTitle, noteText,id);
 
             dm.mNotes.add(note);
         }

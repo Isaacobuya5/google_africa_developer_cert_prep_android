@@ -1,12 +1,13 @@
 package com.isaac.practice.notekeeper;
 
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
 import android.view.Menu;
@@ -15,13 +16,17 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
 
+import com.isaac.practice.notekeeper.database.NoteKeeperOpenHelper;
+
 import java.util.List;
+
+import static com.isaac.practice.notekeeper.database.NoteKeeperDatabaseContract.*;
 
 public class NoteActivity extends AppCompatActivity {
 
 //    public static final String NOTE_INFO = "com.isaac.practice.notekeeper.NOTE_INFO";
-public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_POSITION";
-    public static final int POSITION_NOT_SET = -1;
+public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITION";
+    public static final int ID_NOT_SET = -1;
     private NoteInfo mNote;
     private boolean mIsNewNote;
     private Spinner mSpinnerCourses;
@@ -33,6 +38,12 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
 //    private String mMOriginalNoteTitle;
 //    private String mMOriginalNoteText;
     private NoteActivityViewModel mNoteActivityViewModel;
+    private NoteKeeperOpenHelper mDbHelper;
+    private Cursor mNoteCursor;
+    private int mCourseIdPos;
+    private int mNoteTitlePos;
+    private int mNoteTextPos;
+    private int mNoteId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +52,8 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
         setContentView(R.layout.activity_note);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        mDbHelper = new NoteKeeperOpenHelper(this);
 
         // ViewModelProvider to manage instances of our view model across configuration change
         ViewModelProvider viewModelProvider = new ViewModelProvider(getViewModelStore(), ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication()));
@@ -85,8 +98,36 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
         mTextNoteText = (EditText) findViewById(R.id.text_note_text);
 
         if(!mIsNewNote) {
-            displayNote(mSpinnerCourses, mTextNoteTitle, mTextNoteText);
+            // load this particular note's data
+            loadNoteData();
+//            displayNote();
         }
+    }
+
+    private void loadNoteData() {
+        // get connection to the database.
+        SQLiteDatabase db = mDbHelper.getReadableDatabase();
+
+        String courseId = "android_intent";
+        String titleStart = "dynamic";
+
+//        String selection = NoteInfoEntry.COLUMN_COURSE_ID + "= ? AND " + NoteInfoEntry.COLUMN_NOTE_TITLE + " LIKE ?";
+        String selection = NoteInfoEntry._ID + "=?";
+//        String[] selectionArgs = { courseId, titleStart + "%"};
+        String[] selectionArgs = {Integer.toString(mNoteId)};
+        final String[] noteColumns = {
+                NoteInfoEntry._ID,
+                NoteInfoEntry.COLUMN_COURSE_ID,
+                NoteInfoEntry.COLUMN_NOTE_TITLE,
+                NoteInfoEntry.COLUMN_NOTE_TEXT
+        };
+
+        mNoteCursor = db.query(NoteInfoEntry.TABLE_NAME, noteColumns, selection, selectionArgs, null, null, null);
+        mCourseIdPos = mNoteCursor.getColumnIndex(NoteInfoEntry.COLUMN_COURSE_ID);
+        mNoteTitlePos = mNoteCursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TITLE);
+        mNoteTextPos = mNoteCursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TEXT);
+        mNoteCursor.moveToNext();
+        displayNote();
     }
 
     private void saveOriginalNoteValues() {
@@ -101,15 +142,22 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
 
     }
 
-    private void displayNote(Spinner spinnerCourses, EditText textNoteTitle, EditText textNoteText) {
+    private void displayNote() {
+
+        // getting the values
+        String courseId = mNoteCursor.getString(mCourseIdPos);
+        String noteTitle = mNoteCursor.getString(mNoteTitlePos);
+        String noteText = mNoteCursor.getString(mNoteTextPos);
+
         // get list of courses from DataManager
         List<CourseInfo> courses = DataManager.getInstance().getCourses();
+        CourseInfo course = DataManager.getInstance().getCourse(courseId);
         // get index of that particular course within the list
-        int courseIndex = courses.indexOf(mNote.getCourse());
+        int courseIndex = courses.indexOf(course);
         // set spinner to display course at that index
-        spinnerCourses.setSelection(courseIndex);
-        textNoteTitle.setText(mNote.getTitle());
-        textNoteText.setText(mNote.getText());
+        mSpinnerCourses.setSelection(courseIndex);
+        mTextNoteTitle.setText(noteTitle);
+        mTextNoteText.setText(noteText);
     }
 
     private void readDisplayStateValues() {
@@ -117,15 +165,15 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
         // getting the note that was selected
 //        mNote = intent.getParcelableExtra(NOTE_POSITION);
         // second value is returned if no item is found
-        int position = intent.getIntExtra(NOTE_POSITION, POSITION_NOT_SET);
+        mNoteId = intent.getIntExtra(NOTE_ID, ID_NOT_SET);
 //        mIsNewNote = mNote == null;
-        mIsNewNote = position == POSITION_NOT_SET;
+        mIsNewNote = mNoteId == ID_NOT_SET;
 
         if(mIsNewNote) {
             // create a backing store incase a new note
             createNewNote();
         } else {
-            mNote = DataManager.getInstance().getNotes().get(position);
+            mNote = DataManager.getInstance().getNotes().get(mNoteId);
         }
     }
 
@@ -185,7 +233,7 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
         // get the corresponding note at that positon
         mNote = DataManager.getInstance().getNotes().get(mNotePosition);
         // display that note
-        displayNote(mSpinnerCourses, mTextNoteTitle, mTextNoteText);
+        displayNote();
 
         // calls onPrepareOptionsMenu again
         invalidateOptionsMenu();
@@ -295,6 +343,12 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
         }
     }
 
+    @Override
+    protected void onDestroy() {
+        mDbHelper.close();
+        super.onDestroy();
+    }
+
     /**
      * WORKING WITH OPTIONS MENU
      * Options Menu - allow us to provide actions for out app.
@@ -348,5 +402,36 @@ public static final String NOTE_POSITION = "com.isaac.practice.notekeeper.NOTE_P
      * invalidateOptionsMenu() - call when menu state may need to change.
      * - System schedules a call to onPrepareOptionsMenu - thus it gets called and gives us another chance to
      * modify the state of our application.
+     */
+
+    /**
+     * FILTERING SQL QUERIES
+     * Plan is to decouple th NoteActivity from the MainActivity.
+     * Goal is have the NoteActivity read the selected note directly from the NoteKeeper.db
+     *
+     * Often we want only a subset of table rows rather than all the rows.
+     * We can achieve that by passing a selection criteria to the query method.
+     * Parts of a simple selection include;
+     *  - a. column name
+     *  - b. operator
+     *  - c. value
+     * example -> course_id = "android_intents"
+     * common operators include;
+     * = or ==, != or <>, >, <, =>, =<
+     * LIKE -> allows us to do strings pattern matching.
+     * example note_title LIKE "dynamic%" -> % represents zero or more characters
+     * AND -> combines two conditions. True result only if both conditions are true
+     * example -> course_id = "android_intent" AND note_title LIKE "dynamic%"
+     * OR -> True result when one or both are true.
+     *
+     * Row selection parameters.
+     * Selection is passed to a query() in two parts;
+     * a. selection clause as a string -> uses ?'s as value position holders
+     * b. selection value as a string array -> values replace ?'s in that order.
+     * Benefits of separating selection and values are;
+     * -> Protects against SQL attacks.
+     * -> Helps query performance.
+     *
+     *
      */
 }

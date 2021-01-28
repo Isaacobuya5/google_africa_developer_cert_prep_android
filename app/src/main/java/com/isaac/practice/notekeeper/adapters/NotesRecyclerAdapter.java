@@ -47,7 +47,8 @@ public class NotesRecyclerAdapter extends RecyclerView.Adapter<NotesRecyclerAdap
         holder.mTextCourse.setText(note.getCourse().getTitle());
         holder.mTextTitle.setText(note.getTitle());
         // set position of this view holder for purposes of click
-        holder.mCurrentPosition = position;
+//        holder.mId = position;
+        holder.mId = note.getId();
     }
 
     @Override
@@ -60,7 +61,7 @@ public class NotesRecyclerAdapter extends RecyclerView.Adapter<NotesRecyclerAdap
         private TextView mTextCourse;
         private TextView mTextTitle;
         // we need to know the position of the ViewHolder
-        public int mCurrentPosition;
+        public int mId;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -72,7 +73,7 @@ public class NotesRecyclerAdapter extends RecyclerView.Adapter<NotesRecyclerAdap
                 public void onClick(View v) {
                     Intent intent = new Intent(mContext, NoteActivity.class);
                     // set intent extra
-                    intent.putExtra(NoteActivity.NOTE_POSITION, mCurrentPosition);
+                    intent.putExtra(NoteActivity.NOTE_ID, mId);
                     mContext.startActivity(intent);
                 }
             });
