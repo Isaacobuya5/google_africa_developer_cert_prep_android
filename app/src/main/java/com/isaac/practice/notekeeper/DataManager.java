@@ -38,7 +38,7 @@ public class DataManager {
                 CourseInfoEntry.COLUMN_COURSE_ID,
                 CourseInfoEntry.COLUMN_COURSE_TITLE
         };
-        final Cursor courseCursor = db.query(CourseInfoEntry.TABLE_NAME, courseColumns, null, null, null, null, null);
+        final Cursor courseCursor = db.query(CourseInfoEntry.TABLE_NAME, courseColumns, null, null, null, null, CourseInfoEntry.COLUMN_COURSE_TITLE + " DESC");
         // walk through the results while populating the list
         loadCoursesFromDatabase(courseCursor);
 
@@ -48,7 +48,10 @@ public class DataManager {
                 NoteInfoEntry.COLUMN_NOTE_TEXT,
                 NoteInfoEntry.COLUMN_COURSE_ID
         };
-        final Cursor noteCursor = db.query(NoteInfoEntry.TABLE_NAME, noteColumns, null, null, null, null, null);
+
+        String notesOrderBy = NoteInfoEntry.COLUMN_COURSE_ID + "," + NoteInfoEntry.COLUMN_NOTE_TITLE;
+
+        final Cursor noteCursor = db.query(NoteInfoEntry.TABLE_NAME, noteColumns, null, null, null, null, notesOrderBy);
         loadNotesFromDatabase(noteCursor);
     }
 
@@ -312,6 +315,12 @@ public class DataManager {
      * => Close Cursor when done by calling the Cursor.close() because the cursor consumes system resources
      * thus we want to avoid resource leak.
      *
+     * Ordering results
+     * Initially, when we load notes and courses, their order is specified as undefined.
+     * We can therefore specify a row order.
+     * The order is passed as a string to the query immediately after column name.
+     * We can order by multiple columns with the first column acting as the primary sort.
+     * We can order by descending order by specifying DESC.
      */
 
 }
