@@ -2,6 +2,7 @@ package com.isaac.practice.notekeeper;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.MenuItem;
@@ -14,6 +15,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.navigation.NavigationView;
 import com.isaac.practice.notekeeper.adapters.CoursesRecyclerAdapter;
 import com.isaac.practice.notekeeper.adapters.NotesRecyclerAdapter;
+import com.isaac.practice.notekeeper.database.NoteKeeperDatabaseContract;
 import com.isaac.practice.notekeeper.database.NoteKeeperOpenHelper;
 
 import androidx.annotation.NonNull;
@@ -28,6 +30,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
+
+import static com.isaac.practice.notekeeper.database.NoteKeeperDatabaseContract.*;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener{
 
@@ -86,14 +90,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mGridLayoutManager = new GridLayoutManager(this, getResources().getInteger(R.integer.course_grid_span));
 
         // get content to place in the list
-        List<NoteInfo> notes = DataManager.getInstance().getNotes();
+        // we are now getting notes from database
+//        List<NoteInfo> notes = DataManager.getInstance().getNotes();
 
         // get list of courses
         List<CourseInfo> courses = DataManager.getInstance().getCourses();
         // our adapter here
 
         // our adapter
-        mNotesRecyclerAdapter = new NotesRecyclerAdapter(notes, this);
+        mNotesRecyclerAdapter = new NotesRecyclerAdapter(null, this);
         mCoursesRecyclerAdapter = new CoursesRecyclerAdapter(courses, this);
 
         displayNotes();
@@ -105,8 +110,28 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         super.onResume();
         // need a way to tell adapter that list has changed due to new note creation
         mNotesRecyclerAdapter.notifyDataSetChanged();
+
+        // load notes from the database
+        loadNotes();
         // we want to update the nav header when we return to this activity from settings screen
         updateNavHeader();
+    }
+
+    private void loadNotes() {
+        SQLiteDatabase db = mNoteKeeperOpenHelper.getReadableDatabase();
+        // issue query to read notes
+        final String[] noteColumns = {
+                NoteInfoEntry._ID,
+                NoteInfoEntry.COLUMN_NOTE_TITLE,
+                NoteInfoEntry.COLUMN_NOTE_TEXT,
+                NoteInfoEntry.COLUMN_COURSE_ID
+        };
+
+        String notesOrderBy = NoteInfoEntry.COLUMN_COURSE_ID + "," + NoteInfoEntry.COLUMN_NOTE_TITLE;
+
+        final Cursor noteCursor = db.query(NoteInfoEntry.TABLE_NAME, noteColumns, null, null, null, null, notesOrderBy);
+        // associate this cursor with notes recycler adapter
+        mNotesRecyclerAdapter.changeCursor(noteCursor);
     }
 
     private void updateNavHeader() {

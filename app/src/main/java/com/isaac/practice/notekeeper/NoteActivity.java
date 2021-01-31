@@ -14,6 +14,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.SimpleCursorAdapter;
 import android.widget.Spinner;
 
 import com.isaac.practice.notekeeper.database.NoteKeeperOpenHelper;
@@ -44,6 +45,7 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
     private int mNoteTitlePos;
     private int mNoteTextPos;
     private int mNoteId;
+    private SimpleCursorAdapter mAdapterCourses;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,16 +80,23 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
         // different adapters available - some responsible for managing in-memory data sources such as Arrays and Lists while others
         // manage databases sources  that use Cursors.
 
-        // get list of courses
-        List<CourseInfo> courses = DataManager.getInstance().getCourses();
+        // we are no longer getting list of courses from the DataManager but rather the database
+//        List<CourseInfo> courses = DataManager.getInstance().getCourses();
+
         // create adapter to associate list of courses with the spinner
         // we can use a custom resource of our own but android provides some built in layout resources,, android.R.layout..
         // android.R.layout.simple_spinner_item - use to format selected item in the spinner
-        ArrayAdapter<CourseInfo> adapterCourses = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, courses);
+        // WE ARE NO LONGER USING ARRAY ADAPTER
+        mAdapterCourses = new SimpleCursorAdapter(this, android.R.layout.simple_spinner_item,null,new String[] {
+                CourseInfoEntry.COLUMN_COURSE_TITLE }, new int[] {
+                        android.R.id.text1},0);
+//        ArrayAdapter<CourseInfo> adapterCourses = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, courses);
         // associate resource we want to use for the drop down list of courses
-        adapterCourses.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        mSpinnerCourses.setAdapter(adapterCourses);
+        mAdapterCourses.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mSpinnerCourses.setAdapter(mAdapterCourses);
 
+        // connecting cursor to the simple cursor adapter
+        loadCourseData();
         //method to read values from intents
         readDisplayStateValues();
         // save original note values just incase we cancel update to an existing note
@@ -102,6 +111,18 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
             loadNoteData();
 //            displayNote();
         }
+    }
+
+    private void loadCourseData() {
+        SQLiteDatabase db = mDbHelper.getReadableDatabase();
+        final String[] courseColumns = {
+                CourseInfoEntry.COLUMN_COURSE_TITLE,
+                CourseInfoEntry.COLUMN_COURSE_ID,
+                CourseInfoEntry._ID
+        };
+        Cursor cursor = db.query(CourseInfoEntry.TABLE_NAME, courseColumns, null, null, null, null, CourseInfoEntry.COLUMN_COURSE_TITLE);
+        // associate the cursor with the SimpleCursorAdaptor
+        mAdapterCourses.changeCursor(cursor);
     }
 
     private void loadNoteData() {
@@ -150,14 +171,40 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
         String noteText = mNoteCursor.getString(mNoteTextPos);
 
         // get list of courses from DataManager
-        List<CourseInfo> courses = DataManager.getInstance().getCourses();
-        CourseInfo course = DataManager.getInstance().getCourse(courseId);
+//        List<CourseInfo> courses = DataManager.getInstance().getCourses();
+//        CourseInfo course = DataManager.getInstance().getCourse(courseId);
         // get index of that particular course within the list
-        int courseIndex = courses.indexOf(course);
+
+        // SETTING THE CURRENTLY SELECTED COURSE FROM THE CURSOR
+
+//        int courseIndex = courses.indexOf(course);
+
+        int courseIndex = getIndexOfCourseId(courseId);
         // set spinner to display course at that index
         mSpinnerCourses.setSelection(courseIndex);
         mTextNoteTitle.setText(noteTitle);
         mTextNoteText.setText(noteText);
+    }
+
+    private int getIndexOfCourseId(String courseId) {
+        // get a reference to the cursor used to populate the spinner
+        Cursor cursor = mAdapterCourses.getCursor();
+        // column index of the column holding the course id
+        int courseIdPos = cursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_ID);
+        int courseRowIndex = 0;
+        // walk through the cursor row by row
+        boolean more = cursor.moveToFirst();
+        while (more) {
+            // get course id for the current row
+            String cursorCourseId = cursor.getString(courseIdPos);
+            // is that the course id we are looking for
+            if (courseId.equals(cursorCourseId)) break;
+            // moving to the next row
+            courseRowIndex++;
+            // moving cursor to the next row
+            more = cursor.moveToNext();
+        }
+        return courseRowIndex;
     }
 
     private void readDisplayStateValues() {
