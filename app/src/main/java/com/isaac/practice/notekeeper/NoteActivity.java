@@ -6,9 +6,14 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
+
+import androidx.loader.app.LoaderManager;
+import androidx.loader.content.CursorLoader;
+import androidx.loader.content.Loader;
 
 import android.view.Menu;
 import android.view.MenuItem;
@@ -23,11 +28,13 @@ import java.util.List;
 
 import static com.isaac.practice.notekeeper.database.NoteKeeperDatabaseContract.*;
 
-public class NoteActivity extends AppCompatActivity {
+public class NoteActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
 //    public static final String NOTE_INFO = "com.isaac.practice.notekeeper.NOTE_INFO";
 public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITION";
     public static final int ID_NOT_SET = -1;
+    public static final int LOADER_NOTES = 0;
+    public static final int LOADER_COURSES = 1;
     private NoteInfo mNote;
     private boolean mIsNewNote;
     private Spinner mSpinnerCourses;
@@ -46,6 +53,8 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
     private int mNoteTextPos;
     private int mNoteId;
     private SimpleCursorAdapter mAdapterCourses;
+    private boolean mCoursesQueryFinished;
+    private boolean mNotesQueryFinished;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,7 +105,9 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
         mSpinnerCourses.setAdapter(mAdapterCourses);
 
         // connecting cursor to the simple cursor adapter
-        loadCourseData();
+//        loadCourseData();
+        // loading courses in a background thread
+        LoaderManager.getInstance(this).initLoader(LOADER_COURSES, null, this);
         //method to read values from intents
         readDisplayStateValues();
         // save original note values just incase we cancel update to an existing note
@@ -108,7 +119,10 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
 
         if(!mIsNewNote) {
             // load this particular note's data
-            loadNoteData();
+//            loadNoteData();
+            // begin the loading process
+//            getLoaderManager().initLoader(LOADER_NOTES,null,this);
+            LoaderManager.getInstance(this).initLoader(LOADER_NOTES, null, this);
 //            displayNote();
         }
     }
@@ -396,6 +410,98 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
         super.onDestroy();
     }
 
+    @NonNull
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
+        CursorLoader loader = null;
+        if (id == LOADER_NOTES)
+            loader = createLoaderNotes();
+        else if (id == LOADER_COURSES)
+            loader = createLoaderCourses();
+        return loader;
+    }
+
+    private CursorLoader createLoaderCourses() {
+        mCoursesQueryFinished = false;
+        return new CursorLoader(this) {
+            @Override
+            public Cursor loadInBackground() {
+                SQLiteDatabase db = mDbHelper.getReadableDatabase();
+                final String[] courseColumns = {
+                        CourseInfoEntry.COLUMN_COURSE_TITLE,
+                        CourseInfoEntry.COLUMN_COURSE_ID,
+                        CourseInfoEntry._ID
+                };
+
+                return db.query(CourseInfoEntry.TABLE_NAME, courseColumns, null, null, null, null, CourseInfoEntry.COLUMN_COURSE_TITLE);
+            }
+        };
+    }
+
+    private CursorLoader createLoaderNotes() {
+        mNotesQueryFinished = false;
+        return new CursorLoader(this) {
+            @Override
+            public Cursor loadInBackground() {
+                SQLiteDatabase db = mDbHelper.getReadableDatabase();
+
+                String selection = NoteInfoEntry._ID + " = ?";
+                String[] selectionArgs = {Integer.toString(mNoteId)};
+
+                final String[] noteColumns = {
+                        NoteInfoEntry._ID,
+                        NoteInfoEntry.COLUMN_COURSE_ID,
+                        NoteInfoEntry.COLUMN_NOTE_TITLE,
+                        NoteInfoEntry.COLUMN_NOTE_TEXT
+                };
+
+                return db.query(NoteInfoEntry.TABLE_NAME, noteColumns,
+                        selection, selectionArgs, null, null, null);
+            }
+        };
+    }
+
+    @Override
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor data) {
+        if (loader.getId() == LOADER_NOTES)
+            loadFinishedNotes(data);
+        else if (loader.getId() == LOADER_COURSES)
+            loadFinishedCourses(data);
+    }
+
+    private void loadFinishedCourses(Cursor data) {
+        // associate this cursor with the adapter
+        mAdapterCourses.changeCursor(data);
+        mCoursesQueryFinished = true;
+        displayNoteWhenQueriesFinished();
+    }
+
+    private void loadFinishedNotes(Cursor data) {
+        mNoteCursor = data;
+        mCourseIdPos = mNoteCursor.getColumnIndex(NoteInfoEntry.COLUMN_COURSE_ID);
+        mNoteTitlePos = mNoteCursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TITLE);
+        mNoteTextPos = mNoteCursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TEXT);
+        mNoteCursor.moveToFirst();
+        mNotesQueryFinished = true;
+        displayNoteWhenQueriesFinished();
+//        displayNote();
+    }
+
+    private void displayNoteWhenQueriesFinished() {
+        if(mNotesQueryFinished && mCoursesQueryFinished)
+            displayNote();
+    }
+
+    @Override
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
+        // close the cursor once done
+        if (loader.getId() == LOADER_NOTES) {
+            if (mNoteCursor == null)
+                mNoteCursor.close();
+        } else if (loader.getId() == LOADER_COURSES)
+            mAdapterCourses.changeCursor(null);
+    }
+
     /**
      * WORKING WITH OPTIONS MENU
      * Options Menu - allow us to provide actions for out app.
@@ -480,5 +586,46 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
      * -> Helps query performance.
      *
      *
+     * PERFORMING LIFE CYCLE AWARE DATA LOADING WITH LOADERS
+     * We need to avoid performing queries as part of the activity's main flow.
+     * As the amount of data in the database increases and as queries get more complex, queries can become time consuming.
+     * Running such time consuming tasks in the main thread, can cause inconsistent UI performance.
+     * May often cause "Application Not Responding Error Message"
+     * So we need to find a way of running the queries on a different thread then pass the results back to the main thread.
+     * We can do this manually though not necessary since Android provides a way to achieve this.
+     * => Android provides a Lifecycle Aware Data Loading model that relies on something called Loaders.
+     * Loaders - a. allows us to run queries on the background thread. b. Cooperates with the Activity LifeCycle.
+     * We don't work directly with loaders but often with LoaderManager.
+     * => LoaderManager knows how to coordinate a Loader and and an Activity.
+     * => Each Activity has a single LoaderManager - which manages all the loaders for an activity.
+     * therefore an activity can have one or more loaders.
+     * => LoaderManager a. initiates a loader excecution.
+     * and b. initiates Loader related clean up. c. -> Provides loader related notification.
+     *
+     * Accessing an Activity's LoaderManager
+     * -> use getLoaderManager().
+     * -> When we are using LoaderManager to load data, we don't load the data directly but rather ask LoaderManager
+     * to load the data for us.
+     * Thus we need to initialize data loading process using a method initLoader().
+     * -> The method accepts an integer ID which uniquely identifies the loader within the activity.
+     * -> We also need to pass the LoaderCallback interface which notifies us of the key steps in the loading process.
+     * It divides processing into 3 steps;
+     * a. Request for the loader i.e. create and return the loader. -> LoaderCallbacks.onCreateLoader().
+     * b. Data is ready i.e. we receive reference to the cursor. -> LoaderCallbacks.onLoadFinished().
+     * c. Time to clean up i.e. Tells loader that its time to clean up i.e. close associated cursor -> LoaderCallbacks.onLoadReset().
+     *
+     *
+     * CursorLoader
+     * Remember -> the purpose of the loader is to run the queries on the background thread.
+     * Loader does so in a way that cooperates with the Activity's life cycle.
+     * CursorLoader is designed specifically for loading cursor based data.
+     * It makes working with SQLite based data easier as well as works well with a special kind of component -> Content Providers.
+     * In this case since we are working with SQLite based data, we need to override loadInBackground() and then inside the
+     * method issue a database query and then return the cursor.
+     *
+     *      * Challenges of Multiple loaders
+     *      * Loaders may be running in parallel and we don't know which one will finish first
+     *      * e.g. if the notes finishes before the courses then we might have a problem.
+     *      * we can solve this by adding flags to each and checking against those flags
      */
 }

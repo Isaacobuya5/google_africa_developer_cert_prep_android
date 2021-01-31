@@ -253,5 +253,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
      * RECYCLERVIEW TESTS
      * We use RecyclerViewActions class to interact with the RecyclerView such as scrolling or Perform actions
      * on RecyclerView items.
+     *
      */
 }
