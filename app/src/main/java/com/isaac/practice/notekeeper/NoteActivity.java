@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.AsyncTask;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -375,8 +376,11 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
         if(mIsCancelling) {
             // remove note from our backing store - if only we have created it new
             if(mIsNewNote) {
-                DataManager.getInstance().removeNote(mNotePosition);
+                // delete note from the database
+                deleteNoteFromDatabase();
+//                DataManager.getInstance().removeNote(mNotePosition);
             } else {
+                // need to FIX this
                 // if cancelled existing note then store the orignial values
                 storePreviousNoteValues();
             }
@@ -384,6 +388,21 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
             // save note when user leaves the note
             saveNote();
         }
+    }
+
+    private void deleteNoteFromDatabase() {
+        final String selection = NoteInfoEntry._ID + "=?";
+        final String[] selectionArgs = {Integer.toString(mNoteId)};
+
+        AsyncTask task = new AsyncTask() {
+            @Override
+            protected Object doInBackground(Object[] objects) {
+                SQLiteDatabase db = mDbHelper.getWritableDatabase();
+                db.delete(NoteInfoEntry.TABLE_NAME, selection, selectionArgs);
+                return null;
+            }
+        };
+        task.execute();
     }
 
     private void storePreviousNoteValues() {
@@ -698,6 +717,19 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
      * -> Provide table name
      * -> Row selection criteria.
      * returns number of rows deleted
+     *
+     *
+     * Always avoid any database action on the main thread.
+     * - don't execute database operation
+     * for update, insert or delete we can use variety of threading solutions available e.g.
+     * AsyncTask
+     * implementing database interaction
+     * -> extend AsyncTask class.
+     * number of methods to override.
+     * @override doInBackground to add a database code.
+     *
+     * -> we then call the execute method and the AsyncTask takes care
+     * of running the task in a background method.
      *
      */
 }
