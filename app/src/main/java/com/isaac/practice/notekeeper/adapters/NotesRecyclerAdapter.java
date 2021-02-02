@@ -98,8 +98,8 @@ public class NotesRecyclerAdapter extends RecyclerView.Adapter<NotesRecyclerAdap
 
     // step 1 - custom ViewHolder class
     public class ViewHolder extends RecyclerView.ViewHolder {
-        private TextView mTextCourse;
-        private TextView mTextTitle;
+        public final TextView mTextCourse;
+        public final TextView mTextTitle;
         // we need to know the position of the ViewHolder
         public int mId;
 

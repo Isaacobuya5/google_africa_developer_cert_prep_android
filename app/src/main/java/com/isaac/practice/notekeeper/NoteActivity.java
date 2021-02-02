@@ -1,5 +1,6 @@
 package com.isaac.practice.notekeeper;
 
+import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -111,7 +112,7 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
         //method to read values from intents
         readDisplayStateValues();
         // save original note values just incase we cancel update to an existing note
-        saveOriginalNoteValues();
+//        saveOriginalNoteValues();
 
         // Get references to the text views
         mTextNoteTitle = (EditText) findViewById(R.id.text_note_title);
@@ -233,16 +234,25 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
         if(mIsNewNote) {
             // create a backing store incase a new note
             createNewNote();
-        } else {
-            mNote = DataManager.getInstance().getNotes().get(mNoteId);
         }
-    }
+//        } else {
+//            mNote = DataManager.getInstance().getNotes().get(mNoteId);
+            // load this particular note from the datanbase
+
+        }
 
     private void createNewNote() {
-        DataManager dm = DataManager.getInstance();
-        mNotePosition = dm.createNewNote();
-        // get note at that position and assign to mNote
-        mNote = dm.getNotes().get(mNotePosition);
+//        DataManager dm = DataManager.getInstance();
+//        mNotePosition = dm.createNewNote();
+//        // get note at that position and assign to mNote
+//        mNote = dm.getNotes().get(mNotePosition);
+        ContentValues values = new ContentValues();
+        values.put(NoteInfoEntry.COLUMN_COURSE_ID, "");
+        values.put(NoteInfoEntry.COLUMN_NOTE_TITLE, "");
+        values.put(NoteInfoEntry.COLUMN_NOTE_TEXT, "");
+
+        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+        mNoteId = (int) db.insert(NoteInfoEntry.TABLE_NAME, null, values);
     }
 
     @Override
@@ -384,9 +394,35 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
     }
 
     private void saveNote() {
-        mNote.setCourse((CourseInfo) mSpinnerCourses.getSelectedItem());
-        mNote.setTitle(mTextNoteTitle.getText().toString());
-        mNote.setText(mTextNoteText.getText().toString());
+        // get users current selection
+        String courseId = selectedCourseId();
+        String noteTitle = mTextNoteTitle.getText().toString();
+        String noteText = mTextNoteText.getText().toString();
+        saveNoteToDatabase(courseId,noteTitle,noteText);
+    }
+
+    private String selectedCourseId() {
+        int selectedPosition = mSpinnerCourses.getSelectedItemPosition();
+        Cursor cursor = mAdapterCourses.getCursor();
+        cursor.moveToPosition(selectedPosition);
+        int courseIdPos = cursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_ID);
+        String courseId = cursor.getString(courseIdPos);
+        return courseId;
+    }
+
+    private void saveNoteToDatabase(String courseId, String noteTitle, String noteText) {
+        // sepecify which note to update
+        String selection = NoteInfoEntry._ID + " = ?";
+        String[] selectionArgs = {Integer.toString(mNoteId)};
+        // identify columns to update
+        ContentValues values = new ContentValues();
+        values.put(NoteInfoEntry.COLUMN_COURSE_ID, courseId);
+        values.put(NoteInfoEntry.COLUMN_NOTE_TITLE, noteTitle);
+        values.put(NoteInfoEntry.COLUMN_NOTE_TEXT, noteText);
+        // get database reference
+        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+        // do the update
+        db.update(NoteInfoEntry.TABLE_NAME, values, selection, selectionArgs);
     }
     // hint -> write to backing store when leaving an activity.
     // saving changes -> handle in onPause
@@ -627,5 +663,41 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
      *      * Loaders may be running in parallel and we don't know which one will finish first
      *      * e.g. if the notes finishes before the courses then we might have a problem.
      *      * we can solve this by adding flags to each and checking against those flags
+     *
+     *      MAKING DATA CHANGES
+     *  -> Requires a connection to the database using getWritableDatabase() of the Open helper class.
+     *  -> Returns reference to the SQLiteDatabase which we use to perform the actual operations.
+     *  -> Operations are still table based i.e. performed against a specific table.
+     *  -> The operations will affect rows and columns within the table.
+     *  -> Three basic ways we can change content of data within our database;
+     *  * Update -> Modify column values of existing row(s) in a table.
+     *  * Insert -> Create a new row in a table.
+     *  * Delete -> Remove existing row(s) from a table.
+     *
+     *  Update Operation
+     *  -> We use SQLiteDatabase.update().
+     *  We need to provide the following;
+     *  a. table name
+     *  b. name of columns to change.
+     *  c. new column values
+     *  d. row selection criteria.
+     *  the update operation returns the number of rows affected.
+     *  specifying column and values -> use the ContentValues class - holds a list of column and values.
+     *  specifying selection criteria - Pass selection clause and arguments.
+     *
+     *
+     * INSERTING DATA
+     * Use SQLiteDatabase.insert().
+     * Specify;
+     * -> table name
+     * -> ContentValues with column values.
+     * return value is the id of newly inserted row.
+     *
+     * Delete
+     * SQLiteDatabase.delete()
+     * -> Provide table name
+     * -> Row selection criteria.
+     * returns number of rows deleted
+     *
      */
 }

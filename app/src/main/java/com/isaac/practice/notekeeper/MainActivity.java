@@ -115,11 +115,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     protected void onResume() {
         super.onResume();
         // need a way to tell adapter that list has changed due to new note creation
-        mNotesRecyclerAdapter.notifyDataSetChanged();
+//        mNotesRecyclerAdapter.notifyDataSetChanged();
 
         // load notes from the database
 //        loadNotes(); -> we want to perform on a different thread
-        LoaderManager.getInstance(this).initLoader(LOADER_NOTES, null, this);
+        LoaderManager.getInstance(this).restartLoader(LOADER_NOTES, null, this);
         // we want to update the nav header when we return to this activity from settings screen
         updateNavHeader();
     }
