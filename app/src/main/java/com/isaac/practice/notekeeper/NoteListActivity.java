@@ -131,6 +131,8 @@ public class NoteListActivity extends AppCompatActivity {
      * Allows multiple selection within an item.
      * In this case we Associate onClick listener with top level view, however some cases may need it on contained views
      *
+     * DOING MORE WITH SQLITE QUERIES
+     *
      */
 
 }

@@ -1,5 +1,6 @@
 package com.isaac.practice.notekeeper;
 
+
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -19,11 +20,15 @@ import com.isaac.practice.notekeeper.database.NoteKeeperDatabaseContract;
 import com.isaac.practice.notekeeper.database.NoteKeeperOpenHelper;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.loader.app.LoaderManager;
+import androidx.loader.content.CursorLoader;
+import androidx.loader.content.Loader;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -33,8 +38,9 @@ import java.util.List;
 
 import static com.isaac.practice.notekeeper.database.NoteKeeperDatabaseContract.*;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener{
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, LoaderManager.LoaderCallbacks<Cursor>{
 
+    public static final int LOADER_NOTES = 0;
     private NotesRecyclerAdapter mNotesRecyclerAdapter;
     private RecyclerView mRecyclerItems;
     private LinearLayoutManager mNotesLayoutManager;
@@ -112,7 +118,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mNotesRecyclerAdapter.notifyDataSetChanged();
 
         // load notes from the database
-        loadNotes();
+//        loadNotes(); -> we want to perform on a different thread
+        LoaderManager.getInstance(this).initLoader(LOADER_NOTES, null, this);
         // we want to update the nav header when we return to this activity from settings screen
         updateNavHeader();
     }
@@ -237,6 +244,47 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     protected void onDestroy() {
         mNoteKeeperOpenHelper.close();
         super.onDestroy();
+    }
+
+    @NonNull
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
+        CursorLoader loader = null;
+        if (id == LOADER_NOTES) {
+            loader = new CursorLoader(this) {
+                @Override
+                public Cursor loadInBackground() {
+                    SQLiteDatabase db = mNoteKeeperOpenHelper.getReadableDatabase();
+                    final String[] noteColumns = {
+                            NoteInfoEntry.getQName(NoteInfoEntry._ID),
+                            NoteInfoEntry.COLUMN_NOTE_TITLE,
+                            CourseInfoEntry.COLUMN_COURSE_TITLE
+                    };
+
+                    String notesOrderBy = CourseInfoEntry.COLUMN_COURSE_TITLE + "," + NoteInfoEntry.COLUMN_NOTE_TITLE;
+
+                    String tablesWithJoin = NoteInfoEntry.TABLE_NAME + " JOIN " +
+                            CourseInfoEntry.TABLE_NAME + " ON " +
+                            NoteInfoEntry.getQName(NoteInfoEntry.COLUMN_COURSE_ID) + " = " +
+                            CourseInfoEntry.getQName( CourseInfoEntry.COLUMN_COURSE_ID);
+
+                    return db.query(tablesWithJoin, noteColumns, null, null, null, null, notesOrderBy);
+                }
+            };
+        };
+        return loader;
+    }
+
+    @Override
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor data) {
+        if (loader.getId() == LOADER_NOTES)
+            mNotesRecyclerAdapter.changeCursor(data);
+    }
+
+    @Override
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
+        if (loader.getId() == LOADER_NOTES)
+            mNotesRecyclerAdapter.changeCursor(null);
     }
 
     /**

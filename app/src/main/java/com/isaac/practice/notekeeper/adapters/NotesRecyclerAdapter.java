@@ -44,7 +44,7 @@ public class NotesRecyclerAdapter extends RecyclerView.Adapter<NotesRecyclerAdap
         if (mCursor == null) return;
         // else -> get column indexes from the cursor.
         // for now we are using course id
-        mCoursePos = mCursor.getColumnIndex(NoteInfoEntry.COLUMN_COURSE_ID);
+        mCoursePos = mCursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_TITLE);
         mNoteTitlePos = mCursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TITLE);
         // this id will be sent via intent
         mIdPos = mCursor.getColumnIndex(NoteInfoEntry._ID);
