@@ -8,6 +8,8 @@ import androidx.annotation.Nullable;
 
 import com.isaac.practice.notekeeper.utils.DatabaseDataWorker;
 
+import static com.isaac.practice.notekeeper.database.NoteKeeperDatabaseContract.*;
+
 public class NoteKeeperOpenHelper extends SQLiteOpenHelper {
 
     public static final String DATABASE_NAME = "NoteKeeper.db"; // database file
@@ -21,8 +23,10 @@ public class NoteKeeperOpenHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         // creating the tables
-        db.execSQL(NoteKeeperDatabaseContract.CourseInfoEntry.SQL_CREATE_TABLE);
-        db.execSQL(NoteKeeperDatabaseContract.NoteInfoEntry.SQL_CREATE_TABLE);
+        db.execSQL(CourseInfoEntry.SQL_CREATE_TABLE);
+        db.execSQL(NoteInfoEntry.SQL_CREATE_TABLE);
+        db.execSQL(CourseInfoEntry.SQL_CREATE_INDEX1);
+        db.execSQL(NoteInfoEntry.SQL_CREATE_INDEX1);
         // insert some initial data into the db
         DatabaseDataWorker dbWorker = new DatabaseDataWorker(db);
         dbWorker.insertCourses();
@@ -32,9 +36,13 @@ public class NoteKeeperOpenHelper extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         // as per now no upgrade to do
+        if (oldVersion < 2) {
+            db.execSQL(CourseInfoEntry.SQL_CREATE_INDEX1);
+            db.execSQL(NoteInfoEntry.SQL_CREATE_INDEX1);
+        }
     }
 
-    /**
+    /**              }
      * DATABASE CREATION AND ACCESS
      * a. Database Creation
      * The first time your app runs, database won't exist yet. Therefore, we need to check whether the database exists.
