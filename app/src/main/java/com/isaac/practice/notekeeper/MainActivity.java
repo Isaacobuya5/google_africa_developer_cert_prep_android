@@ -36,6 +36,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
+import static com.isaac.practice.notekeeper.NoteKeeperProviderContract.*;
 import static com.isaac.practice.notekeeper.database.NoteKeeperDatabaseContract.*;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, LoaderManager.LoaderCallbacks<Cursor>{
@@ -251,26 +252,35 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
         CursorLoader loader = null;
         if (id == LOADER_NOTES) {
-            loader = new CursorLoader(this) {
-                @Override
-                public Cursor loadInBackground() {
-                    SQLiteDatabase db = mNoteKeeperOpenHelper.getReadableDatabase();
-                    final String[] noteColumns = {
-                            NoteInfoEntry.getQName(NoteInfoEntry._ID),
-                            NoteInfoEntry.COLUMN_NOTE_TITLE,
-                            CourseInfoEntry.COLUMN_COURSE_TITLE
-                    };
-
-                    String notesOrderBy = CourseInfoEntry.COLUMN_COURSE_TITLE + "," + NoteInfoEntry.COLUMN_NOTE_TITLE;
-
-                    String tablesWithJoin = NoteInfoEntry.TABLE_NAME + " JOIN " +
-                            CourseInfoEntry.TABLE_NAME + " ON " +
-                            NoteInfoEntry.getQName(NoteInfoEntry.COLUMN_COURSE_ID) + " = " +
-                            CourseInfoEntry.getQName( CourseInfoEntry.COLUMN_COURSE_ID);
-
-                    return db.query(tablesWithJoin, noteColumns, null, null, null, null, notesOrderBy);
-                }
+            final String[] noteColumns = {
+//                    NoteInfoEntry.getQName(NoteInfoEntry._ID),
+                    Notes._ID,
+                    Notes.COLUMN_NOTE_TITLE,
+                    Notes.COLUMN_COURSE_TITLE
             };
+//            final String notesOrderBy = CourseInfoEntry.COLUMN_COURSE_TITLE + "," + NoteInfoEntry.COLUMN_NOTE_TITLE;
+            final String notesOrderBy = Notes.COLUMN_COURSE_TITLE + "," + Notes.COLUMN_NOTE_TITLE;
+
+//            loader = new CursorLoader(this) {
+//                @Override
+//                public Cursor loadInBackground() {
+//                    SQLiteDatabase db = mNoteKeeperOpenHelper.getReadableDatabase();
+//                    final String[] noteColumns = {
+//                            NoteInfoEntry.getQName(NoteInfoEntry._ID),
+//                            NoteInfoEntry.COLUMN_NOTE_TITLE,
+//                            CourseInfoEntry.COLUMN_COURSE_TITLE
+//                    };
+//
+//                    String notesOrderBy = CourseInfoEntry.COLUMN_COURSE_TITLE + "," + NoteInfoEntry.COLUMN_NOTE_TITLE;
+//
+//                    String tablesWithJoin = NoteInfoEntry.TABLE_NAME + " JOIN " +
+//                            CourseInfoEntry.TABLE_NAME + " ON " +
+//                            NoteInfoEntry.getQName(NoteInfoEntry.COLUMN_COURSE_ID) + " = " +
+//                            CourseInfoEntry.getQName( CourseInfoEntry.COLUMN_COURSE_ID);
+//
+//                    return db.query(tablesWithJoin, noteColumns, null, null, null, null, notesOrderBy);
+//                }
+            loader = new CursorLoader(this, Notes.CONTENT_EXPANDED_URI, noteColumns,null,null,notesOrderBy);
         };
         return loader;
     }
@@ -301,6 +311,89 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
      * RECYCLERVIEW TESTS
      * We use RecyclerViewActions class to interact with the RecyclerView such as scrolling or Perform actions
      * on RecyclerView items.
+     *
+     *
+     * CONTENT PROVIDER
+     * -> Is an android component that enscapulates data, exposes that data through a standard interface
+     * and optionally makes that data available to multiple programs.
+     * Content Provider is therefore;
+     * * a way to expose data
+     * * Data is exposed via standard API.
+     *
+     * Content provider visibility
+     * -> Can be limited to an app that implements it.
+     * -> Can also be available to other apps.
+     *
+     * Concept is independent of data storage.
+     * -> Can serve both local and remote data.
+     * -> Can merge both data
+     * -> Static and/or progmatically-produced data.
+     * -> Implementation enscapulates those details.
+     *
+     * SQLite vs Content Provider.
+     * SQLite
+     * -> Is a data storage and management solution.
+     * -> Data accessed through SQLite library.
+     * -> Accessible by apps that owns file.
+     *
+     * Content Providers
+     * -> A Data access solution.
+     * -> Data accessed through a standard API.
+     * -> Access can be available to other apps.
+     *
+     * Content Provider Common Implementations
+     * -> Most commonly we implement them in conjuction with SQLite.
+     * -> SQLite provides the backing store i.e. data stoarge.
+     * -> Content Providers enscapulates the details.
+     * -> May make data available to other apps.
+     *
+     * Creating a Content Provider
+     * Extend ContentProvider class.
+     * Remember they are also components and therefore have a life cycle associated with them.
+     * We must therefore implement the life cycle methods.
+     * Implement data lookup.
+     * -Implement data modification methods.
+     *
+     * Content Provider identification
+     * -> Content Provider may be visible throughout the device.
+     * -> Identification should be globally unique.
+     * -> The way we do this is to associate an authority
+     *  * which uniquely identifies content provider.
+     *  Use reverse domain name format.
+     *  Normally use app package name followed by the provider.
+     *
+     *  -> Decide visibility to other apps
+     *  On older devices, it defaults to being visible to other apps
+     *  while on new devices, it defaults to being not visible to other apps.
+     *  -> We therefore need to mark it as "exported" to make it available.
+     *-> Enabled - means the system can start this content provider.
+     *
+     * Implementing a Content Provider
+     * -> Most often we normally implement on to of SQLite
+     * -> Should enscapulate all database related details
+     * -> Performs all database interaction methods.
+     *
+     * It exposes methods similar to SQLite API
+     * -> Data requests are handled with the query method.
+     * -> Delegate work to SQLite.
+     *
+     *
+     * Requesting data from Content Provider
+     * Similar to querying SQLite
+     * -> Avoid performing on main thread.
+     *
+     * Use CursorLoader
+     * -> Which runs query on the background thread.
+     * -> Cooperates with the activity lifecycle.
+     *-> Initiate query process using LoaderManager.
+     *
+     * CursorLoader understands querying ContentProviders
+     * No need to overload in loadInBackground.
+     * Pass content provider identifier to CursorLoader constructor.
+     * Then CursorLoader takes the details of locating the Content Provider and issuing the query.
+     *
+     * We use Universal Resource Identifiers i.e. Uri to identify the Content Providers.
+     * Has a URI scheme of content i.e. content://com....
      *
      */
 }

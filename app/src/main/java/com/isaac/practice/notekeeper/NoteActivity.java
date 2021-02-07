@@ -1,9 +1,11 @@
 package com.isaac.practice.notekeeper;
 
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
@@ -28,6 +30,7 @@ import com.isaac.practice.notekeeper.database.NoteKeeperOpenHelper;
 
 import java.util.List;
 
+import static com.isaac.practice.notekeeper.NoteKeeperProviderContract.*;
 import static com.isaac.practice.notekeeper.database.NoteKeeperDatabaseContract.*;
 
 public class NoteActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -57,6 +60,7 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
     private SimpleCursorAdapter mAdapterCourses;
     private boolean mCoursesQueryFinished;
     private boolean mNotesQueryFinished;
+    private Uri mNoteUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -248,12 +252,15 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
 //        // get note at that position and assign to mNote
 //        mNote = dm.getNotes().get(mNotePosition);
         ContentValues values = new ContentValues();
-        values.put(NoteInfoEntry.COLUMN_COURSE_ID, "");
-        values.put(NoteInfoEntry.COLUMN_NOTE_TITLE, "");
-        values.put(NoteInfoEntry.COLUMN_NOTE_TEXT, "");
+        values.put(Notes.COLUMN_COURSE_ID, "");
+        values.put(Notes.COLUMN_NOTE_TITLE, "");
+        values.put(Notes.COLUMN_NOTE_TEXT, "");
 
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
-        mNoteId = (int) db.insert(NoteInfoEntry.TABLE_NAME, null, values);
+//        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+//        mNoteId = (int) db.insert(NoteInfoEntry.TABLE_NAME, null, values);
+        // getting a reference to the ContentResolver
+        // this shouldn't be performed on the main thread.
+        mNoteUri = getContentResolver().insert(Notes.CONTENT_URI, values);
     }
 
     @Override
@@ -478,42 +485,63 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
 
     private CursorLoader createLoaderCourses() {
         mCoursesQueryFinished = false;
-        return new CursorLoader(this) {
-            @Override
-            public Cursor loadInBackground() {
-                SQLiteDatabase db = mDbHelper.getReadableDatabase();
-                final String[] courseColumns = {
-                        CourseInfoEntry.COLUMN_COURSE_TITLE,
-                        CourseInfoEntry.COLUMN_COURSE_ID,
-                        CourseInfoEntry._ID
-                };
-
-                return db.query(CourseInfoEntry.TABLE_NAME, courseColumns, null, null, null, null, CourseInfoEntry.COLUMN_COURSE_TITLE);
-            }
+//        Uri uri = Uri.parse("content://com.isaac.practice.notekeeper.provider");
+        Uri uri = Courses.CONTENT_URI;
+//        String[] courseColumns = {
+//                CourseInfoEntry.COLUMN_COURSE_TITLE,
+//                CourseInfoEntry.COLUMN_COURSE_ID,
+//                CourseInfoEntry._ID
+//        };
+        // use constants from Content Provider contract class
+        String[] courseColumns = {
+                Courses.COLUMN_COURSE_TITLE,
+                Courses.COLUMN_COURSE_ID,
+                Courses._ID
         };
+
+        return new CursorLoader(this, uri, courseColumns, null, null,Courses.COLUMN_COURSE_TITLE);
+//        return new CursorLoader(this) {
+//            @Override
+//            public Cursor loadInBackground() {
+//                SQLiteDatabase db = mDbHelper.getReadableDatabase();
+//
+//
+//                return db.query(CourseInfoEntry.TABLE_NAME, courseColumns, null, null, null, null, CourseInfoEntry.COLUMN_COURSE_TITLE);
+//            }
+//        };
     }
 
     private CursorLoader createLoaderNotes() {
         mNotesQueryFinished = false;
-        return new CursorLoader(this) {
-            @Override
-            public Cursor loadInBackground() {
-                SQLiteDatabase db = mDbHelper.getReadableDatabase();
-
-                String selection = NoteInfoEntry._ID + " = ?";
-                String[] selectionArgs = {Integer.toString(mNoteId)};
-
-                final String[] noteColumns = {
-                        NoteInfoEntry._ID,
-                        NoteInfoEntry.COLUMN_COURSE_ID,
-                        NoteInfoEntry.COLUMN_NOTE_TITLE,
-                        NoteInfoEntry.COLUMN_NOTE_TEXT
+//        return new CursorLoader(this) {
+//            @Override
+//            public Cursor loadInBackground() {
+//                SQLiteDatabase db = mDbHelper.getReadableDatabase();
+//
+//                String selection = NoteInfoEntry._ID + " = ?";
+//                String[] selectionArgs = {Integer.toString(mNoteId)};
+//
+//                final String[] noteColumns = {
+//                        NoteInfoEntry._ID,
+//                        NoteInfoEntry.COLUMN_COURSE_ID,
+//                        NoteInfoEntry.COLUMN_NOTE_TITLE,
+//                        NoteInfoEntry.COLUMN_NOTE_TEXT
+//                };
+//
+//                return db.query(NoteInfoEntry.TABLE_NAME, noteColumns,
+//                        selection, selectionArgs, null, null, null);
+//            }
+//        };
+        final String[] noteColumns = {
+//                        Notes._ID,
+                        Notes.COLUMN_COURSE_ID,
+                        Notes.COLUMN_NOTE_TITLE,
+                        Notes.COLUMN_NOTE_TEXT
                 };
-
-                return db.query(NoteInfoEntry.TABLE_NAME, noteColumns,
-                        selection, selectionArgs, null, null, null);
-            }
-        };
+        // query our content provider
+        // build the row Uri
+        mNoteUri = ContentUris.withAppendedId(Notes.CONTENT_URI, mNoteId);
+        return new CursorLoader(this,mNoteUri,noteColumns,null,null,null);
     }
 
     @Override
