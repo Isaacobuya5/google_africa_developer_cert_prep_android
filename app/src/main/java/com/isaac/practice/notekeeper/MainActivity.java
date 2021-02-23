@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Menu;
@@ -56,6 +57,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        // Using StrictMode to detect undesirable operations
+        enableStrictMode();
+
         mNoteKeeperOpenHelper = new NoteKeeperOpenHelper(this);
 
         FloatingActionButton fab = findViewById(R.id.fab);
@@ -81,6 +85,19 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         initializeDisplayContent();
 
+    }
+
+    private void enableStrictMode() {
+        // should only be used in debugging / testing mode
+        if (BuildConfig.DEBUG) {
+            // building a thread policy
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
+                    .detectAll() // detect undesirable operation
+                    .penaltyLog() // set desired action to take.
+                    .build();
+
+            StrictMode.setThreadPolicy(policy);
+        }
     }
 
     private void initializeDisplayContent() {
@@ -394,6 +411,34 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
      *
      * We use Universal Resource Identifiers i.e. Uri to identify the Content Providers.
      * Has a URI scheme of content i.e. content://com....
+     *
+     *      * ANDROID THREADING
+     *      * It is important to protect the main thread because it is responsible for maintaining the User experience.
+     *      * Because some operations are often complex, you may be performing unexpected operation on the main thread.
+     *      * Some examples of long running operations include;
+     *      *  -> Reading from the "disk storage".
+     *      *  -> Writing to the "disk storage".
+     *      *  -> Interacting with the network.
+     *      *
+     *      *  To help us detect these undesirable operations, Android provides the StrictMode class;
+     *      *  StrictMode class can;
+     *      *    -> detect undesirable operations.
+     *      *    -> Enforces penalties when detected.
+     *      *  We can therefore use it in the debugging/testing phase of our application.
+     *      *  We build a desired thread policy i.e. what we want to detect and what we want the penalties to be.
+     *      *  Then we set that policy at app/activity start.
+     *      *
+     *      *  Setting the Thread Policy
+     *      *  -> We use StrictMode.setThreadPolicy - accepts an instance of StrictMode.ThreadPolicy.
+     *      *
+     *      *  Creating the ThreadPolicy
+     *      *  -> We use a builder pattern to create a thread policy.
+     *      *  -> We have a class StrictMode.ThreadPolicy.Builder
+     *      *  2 Phases;
+     *      *      a) set whatever we want to detect.
+     *      *      detectDiskReads, detectDiskWrites, detectNetwork, detectAll
+     *      *      b) decide what we want the penalties to be
+     *      *      penaltyLog, penaltyException, penaltyDialog, penaltyDeath
      *
      */
 }

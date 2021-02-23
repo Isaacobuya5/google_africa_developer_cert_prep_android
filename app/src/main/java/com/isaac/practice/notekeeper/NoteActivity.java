@@ -31,8 +31,10 @@ import androidx.loader.content.Loader;
 
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.SimpleCursorAdapter;
 import android.widget.Spinner;
 
@@ -260,6 +262,42 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
         }
 
     private void createNewNote() {
+        AsyncTask<ContentValues, Integer, Uri> task = new AsyncTask<ContentValues, Integer, Uri>() {
+            private ProgressBar mProgressBar;
+
+            @Override
+            protected void onPreExecute() {
+                // runs on the mai thread
+                mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
+                mProgressBar.setVisibility(View.VISIBLE);
+                mProgressBar.setProgress(1);
+            }
+
+            @Override
+            protected Uri doInBackground(ContentValues... params) {
+                ContentValues insertValues = params[0];
+                Uri rowUri = getContentResolver().insert(Notes.CONTENT_URI, insertValues);
+                simulateLongRunningWork(); // simulate slow database work
+//                mProgressBar.setProgress(2); // won't work here because not running on the main thread
+                publishProgress(2);
+                simulateLongRunningWork(); // simulate slow work with data
+//                mProgressBar.setProgress(3);
+                publishProgress(3);
+                return rowUri;
+            }
+
+            @Override
+            protected void onProgressUpdate(Integer... values) {
+                int progressValue = values[0];
+                mProgressBar.setProgress(progressValue);
+            }
+
+            @Override
+            protected void onPostExecute(Uri uri) {
+                mNoteUri = uri;
+                mProgressBar.setVisibility(View.GONE);
+            }
+        };
 //        DataManager dm = DataManager.getInstance();
 //        mNotePosition = dm.createNewNote();
 //        // get note at that position and assign to mNote
@@ -269,11 +307,19 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
         values.put(Notes.COLUMN_NOTE_TITLE, "");
         values.put(Notes.COLUMN_NOTE_TEXT, "");
 
+        task.execute(values);
+
 //        SQLiteDatabase db = mDbHelper.getWritableDatabase();
 //        mNoteId = (int) db.insert(NoteInfoEntry.TABLE_NAME, null, values);
         // getting a reference to the ContentResolver
         // this shouldn't be performed on the main thread.
-        mNoteUri = getContentResolver().insert(Notes.CONTENT_URI, values);
+//        mNoteUri = getContentResolver().insert(Notes.CONTENT_URI, values);
+    }
+
+    private void simulateLongRunningWork() {
+        try {
+            Thread.sleep(2000);
+        } catch(Exception ex) {}
     }
 
     @Override
@@ -822,5 +868,67 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
      * -> we then call the execute method and the AsyncTask takes care
      * of running the task in a background method.
      *
+     *
+     * ASYNC TASK
+     * Most UI Work is performed on the main thread.
+     * Many pragmatic UI operations only allowed to occur on the main thread.
+     *
+     * Doing Work on the Background Thread.
+     * -> long-running work should be performed on the background thread.
+     * When the work is done, we want to present the work results.
+     *    - this may require interacting with the UI.
+     *
+     *   Doing Work with Async Task
+     *   Async Task  class;
+     *      - Manages the threading details.
+     *      - Provides methods for each phase.
+     *      - Methods are run on the appropriate thread.
+     *  To work with AsyncTask;
+     *  a) Define new class that extends AsyncTask
+     *  b) Override the appropriate methods.
+     *
+     *  Methods;
+     *  a) doInBackground()
+     *      - runs in the background thread.
+     *      - add code to do the actual work.
+     *
+     * b) onPostExecute()
+     *      - runs on the main thread.
+     *      - add code to present work results.
+     *
+     * Passing Data between AsyncTask methods;
+     * -> To indicate AsyncTask processing, we call the execute() on AsyncTask.
+     * execute() -> Accepts a variable length parameter list.
+     * AsyncTask takes care of passing parameters to the doInBackground().
+     * That allows doInBackground() to make use of the values passed in the execute().
+     * When done, it needs to present the work results.
+     *
+     * Providing background results
+     * -> doInBackground() has a return type.
+     * -> AsyncTask takes care of passing the return value to the onPostExecute().
+     * -> Each of these data values needs to have a type.
+     * AsyncTask task = new AsyncTask<
+     * Type1, -> type we want to pass to the doInBackground
+     * Void, -> optional -> see later
+     * Type3 -> return type of the doInBackground
+     * >(){
+     * @override
+     * protected Type3 doInBackground(Type1 ...param) {
+     *     Type3 result = //result of work
+     *     return result;
+     * }
+     *
+     * @override
+     * protected void onPostExecute(Type3 t3) {
+     *     // set the UI with the value
+     * }
+     * }
+     *
+     * Providing Progress Updates with AsyncTask
+     *AsyncTask provides a way to pass progress information from the background thread to the main thread.
+     * We need to tell AsyncTask what type of information that ought to be
+     * -> The purpose of the second argument to AsyncTask ( Void -> Integer )
+     * @override
+     * onProgressUpdate()
      */
 }
