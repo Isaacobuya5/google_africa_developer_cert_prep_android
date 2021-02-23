@@ -17,4 +17,9 @@
         android:icon="@android:drawable/ic_menu_revert"
         android:title="cancel"
         app:showAsAction="ifRoom|withText" />
+
+    <item
+        android:id="@+id/action_set_reminder"
+        android:title="@string/set_reminder"
+        />
 </menu>

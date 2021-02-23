@@ -1,18 +1,28 @@
 package com.isaac.practice.notekeeper;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.lifecycle.ViewModelProvider;
 
 import androidx.loader.app.LoaderManager;
@@ -40,6 +50,8 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
     public static final int ID_NOT_SET = -1;
     public static final int LOADER_NOTES = 0;
     public static final int LOADER_COURSES = 1;
+    public static final int NOTE_NOTIFICATION = 0;
+    public static final String NOTE_KEEPER_NOTIFICATION_CHANNEL_ID = "NoteKeeperNotification";
     private NoteInfo mNote;
     private boolean mIsNewNote;
     private Spinner mSpinnerCourses;
@@ -61,6 +73,7 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
     private boolean mCoursesQueryFinished;
     private boolean mNotesQueryFinished;
     private Uri mNoteUri;
+    private NotificationManager mNotificationManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -286,9 +299,45 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
             finish();
         } else if(id == R.id.action_next){
             displayNextNote();
+        } else if(id == R.id.action_set_reminder) {
+            showReminderNotification();
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showReminderNotification() {
+        String noteTitle = mTextNoteTitle.getText().toString();
+        String noteText = mTextNoteText.getText().toString();
+        int noteId = (int) ContentUris.parseId(mNoteUri);
+
+
+        Intent noteActivityIntent = new Intent(this, NoteActivity.class);
+        noteActivityIntent.putExtra(NoteActivity.NOTE_ID, noteId);
+
+        // create notification channel
+        createNotificationChannel();
+
+        final Bitmap picture = BitmapFactory.decodeResource(getResources(), R.drawable.logo);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "notekeeper");
+        builder.setDefaults(Notification.DEFAULT_ALL)
+                .setSmallIcon(R.drawable.ic_stat_note_reminder)
+                .setContentTitle("Review Note")
+                .setContentText(noteText)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setLargeIcon(picture)
+                .setTicker("Review note")
+                .setStyle(new NotificationCompat.BigTextStyle()
+                .bigText(noteText)
+                .setBigContentTitle(noteTitle)
+                .setSummaryText("Review note"))
+                .setContentIntent(
+                        PendingIntent.getActivity(this, 0, noteActivityIntent, PendingIntent.FLAG_UPDATE_CURRENT)
+                )
+                .addAction(0, "View all notes", PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT))
+                .setAutoCancel(true);
+
+        mNotificationManager.notify(NOTE_KEEPER_NOTIFICATION_CHANNEL_ID, NOTE_NOTIFICATION, builder.build());
     }
 
     @Override
@@ -583,6 +632,20 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
                 mNoteCursor.close();
         } else if (loader.getId() == LOADER_COURSES)
             mAdapterCourses.changeCursor(null);
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = getString(R.string.channel_name);
+            String description = getString(R.string.channel_description);
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(NOTE_KEEPER_NOTIFICATION_CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            // register the channel with the system; you can't change the importance
+            // or other notification behaviours after this
+            mNotificationManager = getSystemService(NotificationManager.class);
+            mNotificationManager.createNotificationChannel(channel);
+        }
     }
 
     /**
