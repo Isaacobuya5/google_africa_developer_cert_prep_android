@@ -930,5 +930,43 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
      * -> The purpose of the second argument to AsyncTask ( Void -> Integer )
      * @override
      * onProgressUpdate()
+     *
+     * Working with Handlers
+     * The main thread has a special kind of thread known as the Looper thread.
+     * A Looper thread has a Looper and a MessageQueue.
+     * The way the main thread receives the work that it is supposed to do is that the work is fed into the
+     * MessageQueue (work such as user interaction, system events).
+     * The Looper then reads that work off the Message Queue , it takes that work and dispatches it into something
+     * called the Handler.
+     * It is the Handler that then actually performs the work.
+     * When our application is started up, our app has a default handler that does most of the System work.
+     * In addition to the Handler that the System creates, we can also create our own Handler and associate with a Looper.
+     *
+     * Working with LooperThread.
+     * Has a Looper and a MessageQueue.
+     * It has the ability to dispatch work instances off to the handler.
+     * Main thread is the common instance of the Looper thread that we can interact with.
+     * However, our application can create additional looper threads if needed.
+     * Handlers are the main point of interaction because it allows us to do the work we need to do in our looper thread.
+     * We can also use Handler instance to enqueue work into the Message Queue of the looper thread.
+     * When the looper encounters that work, it will then dispatch that work back to our Handler instances.
+     *
+     * Constructing a Handler
+     * Must be associated with a looper.
+     * By default i.e. a default constructor uses the current thread's looper.
+     * But sometimes, we want to create a Handler on the background thread and the associate it with our main thread.
+     * We can associate with the main thread by constructing with Looper.getMainLooper.
+     * Allows us to get looper associated with the main application thread. and construct handler to associate with that looper.
+     * Once handler is created, it is bound to that looper.
+     * Therefore, you can enqueue work from any thread. Work will always be performed on the thread of associated looper.
+     *
+     * Primary uses of Handlers therefore are;
+     * a) Sending work to one thread from another  -> e.g. how Async Task works.
+     * b) Schedule work for future execution i.e. we can indicate in a MessageQueue that we don't want work until sometime
+     * in the near future.
+     * Looper will take care of dispatching that work to our handler at the right time.
+     * Exmple use case -> MainActivity onResume() - opening drawer.
+     *
+     *
      */
 }

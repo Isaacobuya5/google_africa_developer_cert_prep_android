@@ -6,7 +6,10 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.StrictMode;
+import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Menu;
@@ -140,6 +143,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         LoaderManager.getInstance(this).restartLoader(LOADER_NOTES, null, this);
         // we want to update the nav header when we return to this activity from settings screen
         updateNavHeader();
+
+        openDrawer();
+    }
+
+    private void openDrawer() {
+        // create a handler instance and associate with LooperThread of the Main Thread
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+                drawer.openDrawer(Gravity.LEFT);
+            }
+        },1000);
     }
 
     private void loadNotes() {
@@ -199,8 +216,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
             return true;
+        } else if (id == R.id.action_backup_notes) {
+            backupNotes();
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void backupNotes() {
+        Intent intent = new Intent(this, NoteBackupService.class);
+        intent.putExtra(NoteBackupService.EXTRA_COURSE_ID, NoteBackup.ALL_COURSES);
+        startService(intent);
     }
 
     @Override
@@ -439,6 +464,84 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
      *      *      detectDiskReads, detectDiskWrites, detectNetwork, detectAll
      *      *      b) decide what we want the penalties to be
      *      *      penaltyLog, penaltyException, penaltyDialog, penaltyDeath
+     *
+     *      PERFORMING BACK GROUND WORK WITH SERVICES
+     *      Performing Background work on Activities have some limitations;
+     *      Activities can initiate background work using - CursorLoader, AsyncTask etc.
+     *      Limitations;
+     *      Activity have a life time.
+     *      -> The life time of an activity is tied to user interaction.
+     *      -> Activity life time ending can impact the background work life time.
+     *      Therefore, the background thread may get cleaned up before the work is complete.
+     *
+     *      Background Work and Services
+     *      -> Services allow us to perform non-UI work within our application.
+     *      -> Services make Android aware that the work we are doing is a meaningful work even though we are not presenting a User Interface.
+     *
+     *      Android keeps the process alive while the background work within the Service continues.
+     *      Once service is done, it gets cleaned up and then the process is cleaned up.
+     *
+     *      Service
+     *      -> Android is a component oriented platform -> Activity, ContentProviders, Service
+     *      Service therefore being an Android component also has a life time and does not present a UI.
+     *      Services allows us to perform long running background work.
+     *              - used for performing work longer than few seconds.
+     *              - continues running even if the user switches to another app.
+     *       We submit work to a service using an intent.
+     *       We create intent similar to activity's intent.
+     *       Associate any needed extras.
+     *       Pass intent to context.startService(intent).
+     *
+     *       Implementing a Service
+     *       Services extend the Service class;
+     *       Service class provides;
+     *        * lifecycle methods.
+     *        * method to receive work
+     *        -> Developer is left to handle a lot of details.
+     * Therefore, if we implement a service by directly inheriting from the service class, we have to deal with;
+     *          a. Threading Behaviour
+     *          - Work is received on the main thread, therefore we need to dispatch the work on a different thread.
+     *          b. Handling of multiple work submissions.
+     *          System will start service when needed. We are limited to one running instance of a service at a time.
+     *          -> Additional work submissions are sent to that running service.
+     *          Therefore, we do not want to wait until the existing work is finished. OR
+     *          We want to spin up another thread and do the work at the same time
+     *          c. Service lifetime
+     *          -> Determine when to shutdown.
+     *          -> Determine how to behave when shutdown by the Android system.
+     *
+     *
+     *          Alternative way of Implementing a Service
+     *          Implementing a Service
+     *          -> IntentService class allows us to implement a Service without having to deal with all those details.
+     *          -> Simplifies Service implementation thus it deals with thr issues above;
+     *          a. Threading Issues
+     *          -> Creates a background LooperThread that is separate from our main application thread.
+     *          Work is then performed on this background LooperThread.
+     *          b. Dealing with multiple work submissions
+     *          Remember, LooperThread has a Message Queue.
+     *              -> Each work that comes in is placed in the MessageQueue.
+     *              -> Submission is done one at a time.
+     *              -> Submission is performed in the order received.
+     *
+     *           c. Services lifetime
+     *           Shutdown when the current work is complete, and there is no more in the queue.
+     *
+     *           Implementation
+     *           -> We extend the IntentService class
+     *              -> Provide the default constructor that calls the base class constructor.
+     *              -> Pass the string containing the service name / used primarily for debugging purposes.
+     *              -> override the appropriate methods;
+     *              * onHandleIntent
+     *               -> Receives intent passed to the startService.
+     *               -> Performing Service work in this method.
+     *               -> Runs on the background LooperThread.
+     *
+     *               * We can also override other service methods if needed;
+     *                  -> Be sure to call the base implementation.
+     *                  -> Helpful when specific work is needed at service creation, destruction etc.
+     *
+     *
      *
      */
 }
