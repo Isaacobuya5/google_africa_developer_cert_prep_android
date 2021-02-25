@@ -1,6 +1,9 @@
 package com.isaac.practice.notekeeper;
 
 
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -8,6 +11,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.PersistableBundle;
 import android.os.StrictMode;
 import android.view.Gravity;
 import android.view.MenuItem;
@@ -46,6 +50,7 @@ import static com.isaac.practice.notekeeper.database.NoteKeeperDatabaseContract.
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, LoaderManager.LoaderCallbacks<Cursor>{
 
     public static final int LOADER_NOTES = 0;
+    public static final int NOTE_UPLOAD_JOB_ID = 1;
     private NotesRecyclerAdapter mNotesRecyclerAdapter;
     private RecyclerView mRecyclerItems;
     private LinearLayoutManager mNotesLayoutManager;
@@ -218,8 +223,26 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             return true;
         } else if (id == R.id.action_backup_notes) {
             backupNotes();
+        } else if (id == R.id.action_upload_notes) {
+            scheduleNotesUpload();
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void scheduleNotesUpload() {
+        // Passing values to this job
+        PersistableBundle extras = new PersistableBundle();
+        extras.putString(NoteUploadJobService.EXTRA_DATA_URI, Notes.CONTENT_URI.toString());
+        // provide description of the component that will handle the job
+        ComponentName componentName = new ComponentName(this, NoteUploadJobService.class);
+        // building the job info
+        JobInfo jobInfo = new JobInfo.Builder(NOTE_UPLOAD_JOB_ID, componentName)
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                .setExtras(extras)
+                .build();
+        // Scheduling the Job
+        JobScheduler jobScheduler = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
+        jobScheduler.schedule(jobInfo);
     }
 
     private void backupNotes() {
@@ -540,6 +563,66 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
      *               * We can also override other service methods if needed;
      *                  -> Be sure to call the base implementation.
      *                  -> Helpful when specific work is needed at service creation, destruction etc.
+     *
+     *
+     * Using PendingIntent Service
+     * To start a service from another app, we need to mark it as exported in the application manifest
+     * Starting with a PendingIntent -> creating a PendingIntent instance using PendingIntent.getService()
+     *
+     *
+     * Android JobSchedular
+     * - Job Scheduler Overview
+     * - Creating Job Implementation class.
+     * - Job Information, Criteria and Scheduling.
+     * - When work needs to stop.
+     * - Choosing Between Services and Job Scheduler to perform background work.
+     *
+     *
+     * Background work presents challenges to the system and developers.
+     * Background work system challenges;
+     *   -> Many apps now run background work. - can affect user foreground experience.
+     *   Can create system-wide impact i.e.
+     *      * Excessive memory usage.
+     *      * High CPU usage.
+     *      * Rapid battery drain.
+     *
+     *      Background work often has run criteria e.g;
+     *          - Device is connected to a network.
+     *          - Device is plugged in.
+     *          - Run at regular time intervals.
+     *
+     *       Therefore, it is not easy to get it right when you need to specify multiple run criteria for your app;
+     *          -> Need to determine if currently available. (is criteria being met).
+     *          -> May need to wait until available.
+     *          -> Need to detect when no longer available.
+     *
+     *      To he lp us with all these, Android introduced the JobScheduler;
+     *      -> It addresses most of our background work challenges.
+     *
+     *      Addressing System Challenges
+     *      -> Gives system more control of when background work is run.
+     *
+     *      Addressing developer challenges.
+     *       -> Job Scheduler takes care of handling the run criteria details.
+     *
+     *
+     *       Job Scheduler
+     *       Introduced in AP 21 i.e. Android 5.0 and newer.
+     *       Becoming the preferred way of doing background work.
+     *       Because with traditional 'services' each app took care of managing its background work.
+     *       While with Job Scheduler, the system has much control over the background work therefore allows the system to better manage its resource use.
+     *       -> THus can limit impact on user experience as well as on device.
+     *
+     *       Useful in many scenerios
+     *       Caveat: work may not start immediately. - if you want work to start immediately then use a service.
+     *
+     *       Work is handled as a "job".
+     *         - A job is created in steps.
+     *         a. Implement the job
+     *              - Component that handles doing the work.
+     *         b
+     *
+     *
      *
      *
      *

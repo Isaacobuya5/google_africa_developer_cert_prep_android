@@ -352,6 +352,7 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
         return super.onOptionsItemSelected(item);
     }
 
+    // displaying notifications
     private void showReminderNotification() {
         String noteTitle = mTextNoteTitle.getText().toString();
         String noteText = mTextNoteText.getText().toString();
@@ -360,6 +361,10 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
 
         Intent noteActivityIntent = new Intent(this, NoteActivity.class);
         noteActivityIntent.putExtra(NoteActivity.NOTE_ID, noteId);
+
+        // note backuo service intent
+        Intent backupServiceIntent = new Intent(this, NoteBackupService.class);
+        backupServiceIntent.putExtra(NoteBackupService.EXTRA_COURSE_ID, NoteBackup.ALL_COURSES);
 
         // create notification channel
         createNotificationChannel();
@@ -381,6 +386,7 @@ public static final String NOTE_ID = "com.isaac.practice.notekeeper.NOTE_POSITIO
                         PendingIntent.getActivity(this, 0, noteActivityIntent, PendingIntent.FLAG_UPDATE_CURRENT)
                 )
                 .addAction(0, "View all notes", PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT))
+                .addAction(0, "Backup notes", PendingIntent.getService(this, 0, backupServiceIntent, PendingIntent.FLAG_UPDATE_CURRENT))
                 .setAutoCancel(true);
 
         mNotificationManager.notify(NOTE_KEEPER_NOTIFICATION_CHANNEL_ID, NOTE_NOTIFICATION, builder.build());
